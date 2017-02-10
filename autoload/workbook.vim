@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-06
-" @Revision:    501
+" @Last Change: 2017-02-10
+" @Revision:    567
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
@@ -19,19 +19,43 @@ endif
 
 
 if !exists('g:workbook#map_evalblock')
+    " Evaluate the current paragraph
     let g:workbook#map_evalblock = '<c-cr>'   "{{{2
 endif
 
+if !exists('g:workbook#map_evalblockinv')
+    " Evaluate the current paragraph with |g:workbook#insert_results_in_buffer| temporarily inversed.
+    let g:workbook#map_evalblockinv = '<c-s-cr>'   "{{{2
+endif
+
+if !exists('g:workbook#map_op')
+    " Operator map
+    let g:workbook#map_op = '<localleader>e'   "{{{2
+endif
+
 if !exists('g:workbook#map_leader')
-    let g:workbook#map_leader = '<localleader>e'   "{{{2
+    " Map leader
+    let g:workbook#map_leader = '<localleader>w'   "{{{2
 endif
 
 if !exists('g:workbook#transcript')
+    " If true, maintain a transcript
     let g:workbook#transcript = 1   "{{{2
 endif
 
 if !exists('g:workbook#insert_results_in_buffer')
+    " If true, insert the results of an evaluation below the evaluated 
+    " code.
+    "
+    " This parameter will be overridden by the value of 
+    " b:workbook_insert_results_in_buffer_once or 
+    " b:workbook_insert_results_in_buffer if existant.
     let g:workbook#insert_results_in_buffer = 1   "{{{2
+endif
+
+
+if !exists('g:workbook#handlers')
+    let g:workbook#handlers = [{'key': 5, 'agent': 'workbook#EditItem', 'key_name': '<c-e>', 'help': 'Edit item'}]   "{{{2
 endif
 
 
@@ -103,6 +127,10 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
     endif
     let s:buffers[bufnr] = id
     call workbook#SetupBuffer()
+    if has_key(repl, 'quicklist')
+        exec 'nnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#Quicklist(expand("<cword>"))<cr>'
+        exec 'vnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#Quicklist(join(tlib#selection#GetSelection("v"), " "))<cr>'
+    endif
     if has_key(repl, 'InitBufferFiletype')
         call repl.InitBufferFiletype()
     endif
@@ -113,16 +141,17 @@ endf
 function! workbook#SetupBuffer() abort "{{{3
     if !exists('b:workbook_setup_done')
         let b:workbook_setup_done = 1
-        autocmd Workbook Bufdelete <buffer> call workbook#RemoveBuffer(expand("<abuf>"))
+        autocmd Workbook Bufwipeout <buffer> call workbook#RemoveBuffer(expand("<abuf>"))
         command -buffer -nargs=1 Workbooksend call workbook#Send(<q-args>)
         command -buffer -nargs=1 Workbookeval echo workbook#Eval(<q-args>)
         command -buffer Workbookrepl call workbook#InteractiveRepl()
         command -buffer Workbookclear call workbook#StripResults(1, line('$'))
         command -buffer Workbookhelp call workbook#Help()
-        exec 'nmap <buffer>' g:workbook#map_evalblock g:workbook#map_leader.'ip'
-        exec 'nnoremap <buffer>' g:workbook#map_leader ':set opfunc=workbook#Op<cr>g@'
-        exec 'vnoremap <buffer>' g:workbook#map_leader ':<c-u>call workbook#Op(visualmode(), 1)<cr>'
-        exec 'nnoremap <buffer>' g:workbook#map_leader .'e :call workbook#Print(line("."), line("."))<cr>'
+        exec 'nmap <buffer>' g:workbook#map_evalblock g:workbook#map_op.'ip'
+        exec 'nmap <buffer>' g:workbook#map_evalblockinv ':let b:workbook_insert_results_in_buffer_once = !g:workbook#insert_results_in_buffer<cr>'. g:workbook#map_op.'ip'
+        exec 'nnoremap <buffer>' g:workbook#map_op ':set opfunc=workbook#Op<cr>g@'
+        exec 'vnoremap <buffer>' g:workbook#map_op ':<c-u>call workbook#Op(visualmode(), 1)<cr>'
+        exec 'nnoremap <buffer>' g:workbook#map_op .'w :call workbook#Print(line("."), line("."))<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'r :call workbook#InteractiveRepl()<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'c :call workbook#StripResults(line("."), line("."))<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'C :call workbook#StripResults(1, line("$"))<cr>'
@@ -137,15 +166,23 @@ endf
 
 
 function! workbook#UndoSetup() abort "{{{3
+    let bufnr = bufnr('%')
+    if has_key(s:buffers, bufnr)
+        let repl = workbook#GetRepl()
+        if has_key(repl, 'UndoFiletype')
+            call repl.UndoFiletype()
+        endif
+    endif
     delcommand Workbooksend
     delcommand Workbookeval
     delcommand Workbookrepl
     delcommand Workbookclear
     nunmap <buffer> g:workbook#map_evalblock
-    exec 'nunmap <buffer>' g:workbook#map_leader
-    exec 'vunmap <buffer>' g:workbook#map_leader
+    nunmap <buffer> g:workbook#map_evalblockinv
+    exec 'nunmap <buffer>' g:workbook#map_op
+    exec 'vunmap <buffer>' g:workbook#map_op
+    exec 'nunmap <buffer>' g:workbook#map_op .'w'
     exec 'nunmap <buffer>' g:workbook#map_leader .'e'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'r'
     exec 'nunmap <buffer>' g:workbook#map_leader .'c'
     exec 'nunmap <buffer>' g:workbook#map_leader .'C'
     let &l:omnifunc = b:workbook_orig_omnifunc
@@ -156,9 +193,13 @@ endf
 
 function! workbook#Help() abort "{{{3
     echom 'Commands:'
+    " :nodoc:
     command Workbook
-    echom "\nMaps:"
-    exec 'map' g:workbook#map_evalblock
+    echom ' '
+    echom 'Maps:'
+    echom 'Use' g:workbook#map_evalblock 'to evaluate the current paragraph.'
+    echom 'Use' g:workbook#map_evalblockinv 'to evaluate the current paragraph with g:workbook#insert_results_in_buffer inversed.'
+    exec 'map' g:workbook#map_op
     exec 'map' g:workbook#map_leader
 endf
 
@@ -239,7 +280,15 @@ endf
 
 
 function! workbook#Stop(...) abort "{{{3
-    let args = a:0 >= 1 ? a:1 : {}
+    if a:0 >= 1
+        if type(a:1) == 4
+            let args = a:1
+        else
+            let args = tlib#arg#GetOpts(a:1)
+        endif
+    else
+        let args = {}
+    endif
     call assert_true(type(args) == v:t_dict)
     if a:0 >= 2
         let repl = a:2
@@ -285,7 +334,7 @@ function! workbook#Print(line1, line2, ...) abort "{{{3
     let indent = matchstr('^\s\+', code)
     let placeholder = repl.GetPlaceholder(code)
     Tlibtrace 'workbook', placeholder
-    if g:workbook#insert_results_in_buffer
+    if repl.DoInsertResultsInBuffer()
         let pline = indent . repl.GetResultLine('p', placeholder)
         call append(line2, [pline])
     else
@@ -295,10 +344,10 @@ function! workbook#Print(line1, line2, ...) abort "{{{3
     Tlibtrace 'workbook', rid
     call repl.SetPlaceholder(bufnr('%'), placeholder, pline)
     " async
-    if g:workbook#transcript
+    if repl.DoTranscribe()
         call repl.Transcribe('c', lines)
     endif
-    call repl.Send(placeholder, code)
+    call repl.Send(code, placeholder)
 endf
 
 
@@ -320,7 +369,7 @@ function! workbook#StripResults(line1, line2, ...) abort "{{{3
             let line2 -= 1
         endif
     endfor
-    return sort([line1, line2])
+    return sort([line1, line2], {i1, i2 -> i1 == i2 ? 0 : i1 > i2 ? 1 : -1})
 endf
 
 
@@ -329,7 +378,7 @@ function! workbook#Send(code) abort "{{{3
     let repl = workbook#GetRepl()
     let p = repl.GetPlaceholder(a:code)
     call repl.SetPlaceholder(0, p, '')
-    call repl.Send(p, a:code)
+    call repl.Send(a:code, p)
 endf
 
 
@@ -348,6 +397,7 @@ function! workbook#OmniComplete(findstart, base) abort "{{{3
         if exists('b:workbook_orig_omnifunc')
             let &l:omnifunc = b:workbook_orig_omnifunc
             unlet! b:workbook_orig_omnifunc
+            return empty(&l:omnifunc) ? [] : call(&l:omnifunc, [a:findstart, a:base])
         endif
     else
         if a:findstart
@@ -370,12 +420,16 @@ endf
 
 
 function! workbook#InteractiveRepl() abort "{{{3
-    if !g:workbook#transcript
-        let transcript = g:workbook#transcript
-        let g:workbook#transcript = 1
+    let repl = workbook#GetRepl()
+    if !repl.DoTranscribe()
+        let transcribe = repl.DoTranscribe()
+        call repl.SetTranscribe(1)
     endif
     try
-        let repl = workbook#GetRepl()
+        let ignore_output = get(repl, 'ignore_output', 0)
+        if ignore_output == 0
+            let repl.ignore_output = 1
+        endif
         call inputsave()
         while 1
             let code = input('> ')
@@ -383,13 +437,16 @@ function! workbook#InteractiveRepl() abort "{{{3
                 break
             else
                 call repl.Transcribe('i', [code], 1)
-                call repl.Input(code ."\n")
+                call repl.Input(code, 1)
             endif
         endwh
         call inputrestore()
     finally
-        if exists('transcript')
-            let g:workbook#transcript = transcript
+        if ignore_output == 0
+            let repl.ignore_output = 0
+        endif
+        if exists('transcribe')
+            call repl.SetTranscribe(transcribe)
         endif
     endtry
 endf
@@ -402,4 +459,35 @@ function! workbook#NextCmd() abort "{{{3
         exec cmd
     endif
 endf
+
+
+function! workbook#Quicklist(word) "{{{3
+    " TLogVAR a:word
+    let repl = workbook#GetRepl()
+    if has_key(repl, 'quicklist')
+        let ql = map(copy(repl.quicklist), 'tlib#string#Printf1(v:val, a:word)')
+        let code = tlib#input#List('s', 'Select function:', ql, g:workbook#handlers)
+        if !empty(code)
+            call workbook#Send(code)
+        endif
+    endif
+endf
+
+
+function! workbook#EditItem(world, items) "{{{3
+    " TLogVAR a:items
+    let item = get(a:items, 0, '')
+    call inputsave()
+    let item = input('Edit> ', item)
+    call inputrestore()
+    " TLogVAR item
+    if item != ''
+        let a:world.rv = item
+        let a:world.state = 'picked'
+        return a:world
+    endif
+    let a:world.state = 'redisplay'
+    return a:world
+endf
+
 

@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-06
-" @Revision:    192
+" @Last Change: 2017-02-10
+" @Revision:    372
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -13,6 +13,11 @@ if !exists('g:loaded_tlib') || g:loaded_tlib < 122
 endif
 
 
+if !exists('g:workbook#ft#r#shell')
+    " let g:workbook#ft#r#shell = executable('bash') ? ['/bin/bash', '--login', '-c'] : []  "{{{2
+    let g:workbook#ft#r#shell = []  "{{{2
+endif
+
 if !exists('g:workbook#ft#r#cmd')
     let g:workbook#ft#r#cmd = executable('Rterm') ? 'Rterm' : 'R'   "{{{2
 endif
@@ -22,8 +27,8 @@ endif
 
 
 if !exists('g:workbook#ft#r#args')
-    let g:workbook#ft#r#args = '--slave --no-save'   "{{{2
-    " let g:workbook#ft#r#args = '--no-save'   "{{{2
+    " let g:workbook#ft#r#args = '--slave --no-save'   "{{{2
+    let g:workbook#ft#r#args = '--silent --no-save '. (g:workbook#ft#r#cmd =~ '\<Rterm\>' ? '--ess' : '--no-readline --interactive')   "{{{2
 endif
 
 
@@ -33,8 +38,14 @@ endif
 
 
 if !exists('g:workbook#ft#r#init_code')
-    let g:workbook#ft#r#init_code = 'invisible({options(width = 10000); NULL})'   "{{{2
+    let g:workbook#ft#r#init_code = ''   "{{{2
 endif
+
+
+" if !exists('g:workbook#ft#r#help_type')
+"     " Other help types may not work.
+"     let g:workbook#ft#r#help_type = ''   "{{{2
+" endif
 
 
 if !exists('g:workbook#ft#r#comment_rxf')
@@ -50,63 +61,105 @@ if !exists('g:workbook#ft#r#quicklist')
 endif
 
 
-if !exists('g:workbook#ft#r#handlers')
-    let g:workbook#ft#r#handlers = [{'key': 5, 'agent': 'workbook#ft#r#EditItem', 'key_name': '<c-e>', 'help': 'Edit item'}]   "{{{2
-endif
-
-
 if !exists('g:workbook#ft#r#highlight_debug')
     " Highlight group for debugged functions.
     let g:workbook#ft#r#highlight_debug = 'SpellRare'   "{{{2
 endif
 
 
-if !exists('g:workbook#ft#r#wrap_code_f')
-    let g:workbook#ft#r#wrap_code_f = 'tryCatch(with(withVisible({%s}), if (visible) print(value)), finally = cat("\n%s\n"))'   "{{{2
+if !exists('g:workbook#ft#r#use_rserve')
+    " Defined how to talk to R. Possible values are:
+    " '' ......... run via |job_start()|
+    " 'rserve' ... Use Rserve (doesn't work properly yet)
+    let g:workbook#ft#r#mode = ''   "{{{2
 endif
 
 
-let s:prototype = {'debugged': {}}
+if !exists('g:workbook#ft#r#wait_after_send_line')
+    let g:workbook#ft#r#wait_after_send_line = '100m'   "{{{2
+endif
 
+
+let s:wrap_code_f = "tryCatch(with(withVisible({%s\n}), if (visible) print(value)), finally = {cat(\"\\n%s\\n\"); flush.console()})"   "{{{2
+" let s:wrap_code_f = "{%s\n}; cat(\"\\n%s\\n\"); flush.console()"   "{{{2
+
+
+let s:prototype = {'debugged': {}
+            \ , 'quicklist': g:workbook#ft#r#quicklist
+            \ }
+            " \ ,'repl_type': 'vim_nl'
+            " \ ,'repl_type': 'vim_raw'
 
 function! workbook#ft#r#New(ext) abort "{{{3
     let o = extend(a:ext, s:prototype)
+    let o.cmd = o.GetReplCmd()
     return o
+endf
+
+
+function! s:prototype.GetReplCmd() abort dict "{{{3
+    let args = join([g:workbook#ft#r#args] + get(self.args, '__rest__', []))
+    let cmd0 = empty(args) ? g:workbook#ft#r#cmd : printf('%s %s', g:workbook#ft#r#cmd, args)
+    if empty(g:workbook#ft#r#shell)
+        let cmd = cmd0
+        let cmd = substitute(cmd, '\\', '/', 'g')
+    else
+        let cmd = g:workbook#ft#r#shell + [cmd0]
+        let cmd = map(cmd, {i, v -> substitute(v, '\\', '/', 'g')})
+    endif
+    return cmd
 endf
 
 
 function! s:prototype.InitFiletype() abort dict "{{{3
     if filereadable(g:workbook#ft#r#init_script)
-        call self.Eval(printf('source("%s")', substitute(g:workbook#ft#r#init_script, '\\', '/', 'g')))
+        call self.Send(printf('source("%s")', substitute(g:workbook#ft#r#init_script, '\\', '/', 'g')))
     endif
-    let p = self.GetPlaceholder('startup message')
-    call self.SetPlaceholder(0, p, '')
-    call self.Send(p, g:workbook#ft#r#init_code)
+    " let p = self.GetPlaceholder('startup message')
+    " call self.SetPlaceholder(0, p, '')
+    " call self.Send(printf('options(help_type = %s)', empty(g:workbook#ft#r#help_type) ? 'NULL' : string(g:workbook#ft#r#help_type)))
+    call self.Send(g:workbook#ft#r#init_code)
     " call workbook#ft#r#Cd()
+    call self.Send('flush.console()')
+    " call self.Input("\n\n", 0)
 endf
 
 
 function! s:prototype.ExitFiletype(args) abort dict "{{{3
     let qargs = get(a:args, 'save', 0) || get(self, 'save', 0) ? 'save = "yes"' : ''
     let cmd = printf('q(%s)', qargs)
-    call self.Eval(cmd)
+    call self.Send(cmd)
 endf
 
 
 function! s:prototype.InitBufferFiletype() abort dict "{{{3
-    let filename = substitute(expand('%:p'), '\\', '/', 'g')
-    " let wd = substitute(expand('%:p:h'), '\\', '/', 'g')
-    let wd = substitute(getcwd(), '\\', '/', 'g')
+    if &buftype != 'nofile'
+        let filename = substitute(expand('%:p'), '\\', '/', 'g')
+        " let wd = substitute(expand('%:p:h'), '\\', '/', 'g')
+        " let wd = substitute(getcwd(), '\\', '/', 'g')
+        exec 'nnoremap <buffer>' g:workbook#map_leader .'s :call workbook#Send(''source('. string(filename) .')'')<cr>'
+    endif
     exec 'nnoremap <buffer>' g:workbook#map_leader .'cd :call workbook#ft#r#Cd()<cr>'
-    exec 'nnoremap <buffer>' g:workbook#map_leader .'s :call workbook#Send(''source('. string(filename) .')'')<cr>'
-    nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
+    " if &keywordprg =~# '^\%(:\?help$\|man\>\)'
+    "     nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
+    " endif
     exec 'nnoremap <buffer>' g:workbook#map_leader .'k :call workbook#Send(''workbookKeyword(<c-r><c-w>, "<c-r><c-w>")'')<cr>'
     exec 'nnoremap <buffer>' g:workbook#map_leader .'f :echo "<c-r><c-w>" workbook#Eval(''args("<c-r><c-w>")'')<cr>'
-    " exec 'nnoremap <buffer> '. g:workbook#map_leader .'r :call workbook#ft#r#Quicklist(expand("<cword>"))<cr>'
-    exec 'nnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#ft#r#Quicklist(expand("<cword>"))<cr>'
-    exec 'vnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#ft#r#Quicklist(join(tlib#selection#GetSelection("v"), " "))<cr>'
     exec 'nnoremap <buffer> '. g:workbook#map_leader .'d :call workbook#ft#r#Debug(expand("<cword>"))<cr>'
     exec 'vnoremap <buffer> '. g:workbook#map_leader .'d ""p:call workbook#ft#r#Debug(@")<cr>'
+endf
+
+
+function! s:prototype.UndoFiletype() abort dict "{{{3
+    exec 'nunmap <buffer>' g:workbook#map_leader .'cd'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'s'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'f'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'q'
+    exec 'vunmap <buffer>' g:workbook#map_leader .'q'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'d'
+    exec 'vunmap <buffer>' g:workbook#map_leader .'d'
+    " nunmap <buffer> K
+    exec 'nunmap <buffer>' g:workbook#map_leader .'k'
 endf
 
 
@@ -121,19 +174,51 @@ function! s:prototype.GetPlaceholderFromEndMark(msg) abort dict "{{{3
 endf
 
 
-function! s:prototype.GetReplCmd() abort dict "{{{3
-    return printf('%s %s', g:workbook#ft#r#cmd, g:workbook#ft#r#args)
+" function! s:prototype.PreprocessNlMessage(msg) abort dict "{{{3
+"     let parts = split(a:msg, "\<c-h>\\+\<c-m>\\?", 1)
+"     return parts[-1]
+" endf
+
+
+" function! s:prototype.PreprocessRawMessage(msg) abort dict "{{{3
+"     echom "DBG" string(a:msg)
+"     let parts = split(a:msg, '\n', 1)
+"     let parts = map(parts, {i,p -> self.PreprocessNlMessage(p)})
+"     return join(parts, "\n")
+" endf
+
+
+function! s:prototype.ProcessMessage(msg) abort dict "{{{3
+    Tlibtrace 'workbook', 'ProcessMessage', a:msg
+    let rx = printf("\\V\\%(\\^\\|\n\\)\\(\\[>+]\\s\\*\\)\\?". escape(s:wrap_code_f, '\') ."\\%(\\$\\|\n\\)", '\_.\{-}', '---- \S\+ ----')
+    Tlibtrace 'workbook', 'ProcessMessage', rx
+    let msg = substitute(a:msg, rx, '\n', 'g')
+    Tlibtrace 'workbook', 'ProcessMessage', msg
+    return msg
 endf
 
 
-" function! s:prototype.ProcessLine(line) abort dict "{{{3
-"     " if a:line =~# '^Browse\[\d\+\]>'
-"     "     " call add(self.next_cmd, 'Worbookrepl')
-"     "     call timer_start(500, function('workbook#ft#r#BrowserHandler()'))
-"     " endif
-"     return a:line
-"     " return substitute(a:line, '^\%([>+] \)\+', '', 'g')
-" endf
+function! s:prototype.ProcessLine(line) abort dict "{{{3
+    "" Doesn't work because it will be called recursively
+    if a:line =~# '^Browse\[\d\+\]>'
+        echohl WarningMsg
+        echom 'Workbook/r:' a:line
+        echohl NONE
+    "     " call add(self.next_cmd, 'Worbookrepl')
+    "     if !has_key(self, 'browser_mode')
+    "         call timer_start(500, function('workbook#ft#r#BrowserHandler'))
+    "     endif
+    endif
+    return substitute(a:line, '^\%([>+] \)\+', '', 'g')
+endf
+
+
+if !empty(g:workbook#ft#r#wait_after_send_line)
+    function! s:prototype.ProcessSendLine(Sender) abort dict "{{{3
+        call a:Sender()
+        exec 'sleep' g:workbook#ft#r#wait_after_send_line
+    endf
+endif
 
 
 function! s:prototype.GetResultLineRxf() abort dict "{{{3
@@ -152,23 +237,23 @@ function! s:prototype.Complete(text) abort dict "{{{3
 endf
 
 
-" function! s:prototype.PrepareEvaluation(code) abort dict "{{{3
-"     " call add(self.ignore_lines, a:code)
-"     call add(self.ignore_lines, 'No traceback available')
-"     call add(self.ignore_lines, "Error: unexpected input in \"\<c-c>\"")
-"     call self.SendToChannel(function('ch_sendraw'), "\<c-c>\n", 1)
-" endf
-
-
 function! s:prototype.WrapCode(placeholder, code) abort dict "{{{3
-    return printf(g:workbook#ft#r#wrap_code_f, a:code, self.GetEndMark(a:placeholder))
+    if g:workbook#ft#r#mode ==# 'rserve'
+        let code = printf('workbookRserveEval(with(withVisible({%s}), if (visible) {print(value); value}))', a:code)
+    else
+        let code = a:code
+    endif
+    let wcode = printf(s:wrap_code_f, code, self.GetEndMark(a:placeholder))
+    return wcode
 endf
 
 
-function! s:prototype.FilterLines(lines) abort dict "{{{3
-    let rx = printf('\V'. escape(g:workbook#ft#r#wrap_code_f, '\'), '\.\{-}', '---- \S\+ ----')
-    return filter(a:lines, {i,v -> v !~# rx})
-endf
+" function! s:prototype.FilterOutputLines(lines) abort dict "{{{3
+"     " let rx = printf('\V'. escape(s:wrap_code_f, '\'), '\.\{-}', '---- \S\+ ----')
+"     " Tlibtrace 'workbook', 'FilterOutputLines', a:lines
+"     " Tlibtrace 'workbook', 'FilterOutputLines', rx
+"     " return filter(a:lines, {i,v -> v !~# rx})
+" endf
 
 
 function! s:prototype.Debug(fn) abort dict "{{{3
@@ -182,7 +267,7 @@ function! s:prototype.Debug(fn) abort dict "{{{3
             call self.HighlightDebug()
         else
             echohl Error
-            echom "workbook#ft#r: Cannot debug ". a:fn
+            echom "Workbook/r: Cannot debug ". a:fn
             echohl NONE
         endif
     else
@@ -199,9 +284,9 @@ function! s:prototype.Undebug(fn) abort dict "{{{3
     if !empty(fn)
         if has_key(self.debugged, fn)
             let self.debugged[fn] = 0
-            echom "workbook: Undebug:" a:fn
+            echom "Workbook/r: Undebug:" a:fn
         else
-            echom "workbook: Not a debugged function?" fn
+            echom "Workbook/r: Not a debugged function?" fn
         endif
         let r = printf('undebug(%s)', fn)
         call self.Send(r)
@@ -237,33 +322,6 @@ endf
 function! workbook#ft#r#Cd() abort "{{{3
     let wd = substitute(getcwd(), '\\', '/', 'g')
     exec 'Workbooksend setwd('. string(wd) .')'
-endf
-
-
-function! workbook#ft#r#Quicklist(word) "{{{3
-    " TLogVAR a:word
-    let ql = map(copy(g:workbook#ft#r#quicklist), 'tlib#string#Printf1(v:val, a:word)')
-    let r = tlib#input#List('s', 'Select function:', ql, g:workbook#ft#r#handlers)
-    if !empty(r)
-        call workbook#Send(r)
-    endif
-endf
-
-
-function! workbook#ft#r#EditItem(world, items) "{{{3
-    " TLogVAR a:items
-    let item = get(a:items, 0, '')
-    call inputsave()
-    let item = input('R: ', item)
-    call inputrestore()
-    " TLogVAR item
-    if item != ''
-        let a:world.rv = item
-        let a:world.state = 'picked'
-        return a:world
-    endif
-    let a:world.state = 'redisplay'
-    return a:world
 endf
 
 
