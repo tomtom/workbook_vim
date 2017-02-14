@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-11
-" @Revision:    40
+" @Last Change: 2017-02-14
+" @Revision:    41
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
@@ -43,7 +43,7 @@ endif
 
 
 if !exists('g:workbook#ft#sh#quicklist')
-    let g:workbook#ft#sh#quicklist = ['??"%s"', 'str(%s)', 'summary(%s)', 'head(%s)', 'edit(%s)', 'fix(%s)', 'debugger()', 'traceback()', 'install.packages("%s")', 'update.packages()', 'example("%s")', 'graphics.off()']   "{{{2
+    let g:workbook#ft#sh#quicklist = []   "{{{2
     if exists('g:workbook#ft#r_quicklist_etc')
         let g:workbook#ft#sh#quicklist += g:workbook#ft#r_quicklist_etc
     endif
