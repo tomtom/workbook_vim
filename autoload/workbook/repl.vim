@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-11
-" @Revision:    369
+" @Last Change: 2017-02-14
+" @Revision:    370
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -34,7 +34,11 @@ function! workbook#repl#New(args) abort "{{{3
     let o = deepcopy(s:prototype)
     let o.args = a:args
     let o.filetype = get(o.args, 'filetype', &filetype)
-    let o = workbook#ft#{o.filetype}#New(o)
+    try
+        let o = workbook#ft#{o.filetype}#New(o)
+    catch /^Vim\%((\a\+)\)\=:E117/
+        echoerr 'Workbook: Unsupported filetype:' o.filetype
+    endtry
     let o = workbook#mode#{o.repl_type}#New(o)
     return o
 endf
