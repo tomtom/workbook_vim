@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-10
-" @Revision:    567
+" @Last Change: 2017-02-14
+" @Revision:    622
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
@@ -67,6 +67,18 @@ augroup END
 
 let s:repls = {}
 let s:buffers = {}
+let s:workbook_args = {
+            \ 'help': 'workbook.txt',
+            \ 'trace': 'workbook',
+            \ 'values': {
+            \   'cmd': {'type': 1},
+            \   'args': {'type': 1},
+            \   'save': {'type': -1},
+            \   'filetype': {'type': 1, 'complete_customlist': 'workbook#GetSupportedFiletypes()'},
+            \ },
+            \ 'flags': {
+            \ },
+            \ }
 
 
 function! s:GetBufRepl(bufnr) abort "{{{3
@@ -284,7 +296,7 @@ function! workbook#Stop(...) abort "{{{3
         if type(a:1) == 4
             let args = a:1
         else
-            let args = tlib#arg#GetOpts(a:1)
+            let args = tlib#arg#GetOpts(a:1, s:workbook_args)
         endif
     else
         let args = {}
@@ -488,6 +500,19 @@ function! workbook#EditItem(world, items) "{{{3
     endif
     let a:world.state = 'redisplay'
     return a:world
+endf
+
+
+function! workbook#Complete(ArgLead, CmdLine, CursorPos) abort "{{{3
+    let words = tlib#arg#CComplete(s:workbook_args, a:ArgLead)
+    return sort(words)
+endf
+
+
+function! workbook#GetSupportedFiletypes() abort "{{{3
+    let files = globpath(&rtp, 'autoload/workbook/ft/*.vim', 0, 1)
+    let files = map(files, {i,f -> matchstr(f, '[\/]\zs[^\/.]\{-}\ze\.vim$')})
+    return files
 endf
 
 

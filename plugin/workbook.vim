@@ -2,7 +2,7 @@
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Last Change: 2017-02-14
-" @Revision:    9
+" @Revision:    12
 " GetLatestVimScripts: 5527 0 :AutoInstall: workbook.vim
 
 if &cp || exists("loaded_workbook")
@@ -19,7 +19,7 @@ if !exists('g:workbook_autosetup_filetypes')
 endif
 
 
-command! -nargs=* -bang Workbook call workbook#GetRepl([<f-args>], !empty("<bang>"))
+command! -nargs=* -bang -complete=customlist,workbook#Complete Workbook call workbook#GetRepl([<f-args>], !empty("<bang>"))
 
 
 augroup Workbook
