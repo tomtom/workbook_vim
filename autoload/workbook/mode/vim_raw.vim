@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-10
-" @Revision:    55
+" @Last Change: 2017-02-11
+" @Revision:    57
 
 
 
@@ -16,9 +16,10 @@ endf
 
 
 function! s:prototype.Start() abort dict "{{{3
-    Tlibtrace 'workbook', 'Start', self.cmd
     let self.working_dir = getcwd()
-    let self.job = job_start(self.cmd, {'in_mode': 'raw', 'out_mode': 'raw', 'err_mode': 'raw'
+    let cmd = self.GetReplCmd()
+    Tlibtrace 'workbook', 'Start', cmd
+    let self.job = job_start(cmd, {'in_mode': 'raw', 'out_mode': 'raw', 'err_mode': 'raw'
                 \ , 'out_timeout': 500, 'err_timeout': 500
                 \ , 'exit_cb': {job, status -> self.ExitCb(job, status)}
                 \ , 'out_cb': {ch, msg -> self.OutCb(ch, msg)}

@@ -2,16 +2,7 @@
 #=> [1] 9
 
 1 + "a"
-#=> 4: withVisible({
-#=>        1 + "a"
-#=>     ...
-#=> 3: with(withVisible({
-#=>        1 + "a"
-#=>     ...
-#=> 2: tryCatchList(expr, classes, parentenv, handlers)
-#=> 1: tryCatch(with(withVisible({
-#=>        1 + "a"
-#=>     ...
+#=> No traceback available 
 
 print(1)
 print(3)
@@ -19,8 +10,11 @@ print(3)
 #=> [1] 3
 
 interactive()
+#=> [1] TRUE
 
 capabilities()
+#=>        jpeg         png        tiff       tcltk         X11        aqua    http/ftp     sockets      libxml        fifo      cledit       iconv         NLS     profmem       cairo         ICU long.double     libcurl 
+#=>        TRUE        TRUE        TRUE        TRUE       FALSE       FALSE        TRUE        TRUE        TRUE        TRUE        TRUE        TRUE        TRUE        TRUE        TRUE        TRUE        TRUE        TRUE 
 
 princomp
 

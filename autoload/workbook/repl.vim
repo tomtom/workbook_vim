@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-10
-" @Revision:    361
+" @Last Change: 2017-02-11
+" @Revision:    369
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -37,6 +37,22 @@ function! workbook#repl#New(args) abort "{{{3
     let o = workbook#ft#{o.filetype}#New(o)
     let o = workbook#mode#{o.repl_type}#New(o)
     return o
+endf
+
+
+function! s:prototype.GetReplCmd() abort dict "{{{3
+    let [cmd0, args0] = self.GetFiletypeCmdAndArgs()
+    let cmd = get(self.args, 'cmd', cmd0)
+    let args = get(self.args, 'args', args0)
+    let oargs = get(self.args, '__rest__', [])
+    if !empty(oargs)
+        let args .= ' '. join(oargs)
+    endif
+    if !empty(args)
+        let cmd .= ' '. args
+    endif
+    let cmd = substitute(cmd, '\\', '/', 'g')
+    return cmd
 endf
 
 
@@ -131,6 +147,17 @@ endf
 function! s:prototype.ProcessEval(lines) abort dict "{{{3
     Tlibtrace 'workbook', 'ProcessEval', a:lines
     let self.eval_result = join(a:lines, "\n")
+endf
+
+
+function! s:prototype.GetEndMark(...) abort dict "{{{3
+    let p = a:0 >= 1 ? a:1 : self.GetCurrentPlaceholder()
+    return printf('---- %s ----', p)
+endf
+
+
+function! s:prototype.GetPlaceholderFromEndMark(msg) abort dict "{{{3
+    return matchstr(a:msg, '^---- \zs\S\+\ze ----$')
 endf
 
 

@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-10
-" @Revision:    372
+" @Last Change: 2017-02-13
+" @Revision:    392
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -12,11 +12,6 @@ if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     endif
 endif
 
-
-if !exists('g:workbook#ft#r#shell')
-    " let g:workbook#ft#r#shell = executable('bash') ? ['/bin/bash', '--login', '-c'] : []  "{{{2
-    let g:workbook#ft#r#shell = []  "{{{2
-endif
 
 if !exists('g:workbook#ft#r#cmd')
     let g:workbook#ft#r#cmd = executable('Rterm') ? 'Rterm' : 'R'   "{{{2
@@ -28,7 +23,7 @@ endif
 
 if !exists('g:workbook#ft#r#args')
     " let g:workbook#ft#r#args = '--slave --no-save'   "{{{2
-    let g:workbook#ft#r#args = '--silent --no-save '. (g:workbook#ft#r#cmd =~ '\<Rterm\>' ? '--ess' : '--no-readline --interactive')   "{{{2
+    let g:workbook#ft#r#args = '--silent --no-save '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive')   "{{{2
 endif
 
 
@@ -92,22 +87,12 @@ let s:prototype = {'debugged': {}
 
 function! workbook#ft#r#New(ext) abort "{{{3
     let o = extend(a:ext, s:prototype)
-    let o.cmd = o.GetReplCmd()
     return o
 endf
 
 
-function! s:prototype.GetReplCmd() abort dict "{{{3
-    let args = join([g:workbook#ft#r#args] + get(self.args, '__rest__', []))
-    let cmd0 = empty(args) ? g:workbook#ft#r#cmd : printf('%s %s', g:workbook#ft#r#cmd, args)
-    if empty(g:workbook#ft#r#shell)
-        let cmd = cmd0
-        let cmd = substitute(cmd, '\\', '/', 'g')
-    else
-        let cmd = g:workbook#ft#r#shell + [cmd0]
-        let cmd = map(cmd, {i, v -> substitute(v, '\\', '/', 'g')})
-    endif
-    return cmd
+function! s:prototype.GetFiletypeCmdAndArgs() abort dict "{{{3
+    return [g:workbook#ft#r#cmd, g:workbook#ft#r#args]
 endf
 
 
@@ -160,17 +145,6 @@ function! s:prototype.UndoFiletype() abort dict "{{{3
     exec 'vunmap <buffer>' g:workbook#map_leader .'d'
     " nunmap <buffer> K
     exec 'nunmap <buffer>' g:workbook#map_leader .'k'
-endf
-
-
-function! s:prototype.GetEndMark(...) abort dict "{{{3
-    let p = a:0 >= 1 ? a:1 : self.GetCurrentPlaceholder()
-    return printf('---- %s ----', p)
-endf
-
-
-function! s:prototype.GetPlaceholderFromEndMark(msg) abort dict "{{{3
-    return matchstr(a:msg, '^---- \zs\S\+\ze ----$')
 endf
 
 
