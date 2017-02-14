@@ -95,7 +95,7 @@ function! workbook#GetRepl(...) abort "{{{3
         if type(a:1) == 4
             let args = a:1
         else
-            let args = tlib#arg#GetOpts(a:1)
+            let args = tlib#arg#GetOpts(a:1, s:workbook_args)
         endif
     else
         let args = {}
