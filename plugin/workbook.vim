@@ -1,9 +1,9 @@
 " @Author:      Tom Link (micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-06
-" @Revision:    8
-" GetLatestVimScripts: 0 0 :AutoInstall: workbook.vim
+" @Last Change: 2017-02-14
+" @Revision:    9
+" GetLatestVimScripts: 5527 0 :AutoInstall: workbook.vim
 
 if &cp || exists("loaded_workbook")
     finish
