@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-11
-" @Revision:    34
+" @Last Change: 2017-02-14
+" @Revision:    35
 
 
 
@@ -24,6 +24,9 @@ function! s:prototype.Start() abort dict "{{{3
                 \ , 'out_cb': {ch, msg -> self.OutCb(ch, msg)}
                 \ , 'err_cb': {ch, msg -> self.ErrCb(ch, msg)}
                 \ })
+    if has_key(self, 'wait_after_startup')
+        exec 'sleep' self.wait_after_startup
+    endif
 endf
 
 

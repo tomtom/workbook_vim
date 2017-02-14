@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-13
-" @Revision:    392
+" @Last Change: 2017-02-14
+" @Revision:    399
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -75,12 +75,18 @@ if !exists('g:workbook#ft#r#wait_after_send_line')
 endif
 
 
+if !exists('g:workbook#ft#r#wait_after_startup')
+    let g:workbook#ft#r#wait_after_startup = '300m'   "{{{2
+endif
+
+
 let s:wrap_code_f = "tryCatch(with(withVisible({%s\n}), if (visible) print(value)), finally = {cat(\"\\n%s\\n\"); flush.console()})"   "{{{2
 " let s:wrap_code_f = "{%s\n}; cat(\"\\n%s\\n\"); flush.console()"   "{{{2
 
 
 let s:prototype = {'debugged': {}
             \ , 'quicklist': g:workbook#ft#r#quicklist
+            \ , 'wait_after_startup': g:workbook#ft#r#wait_after_startup
             \ }
             " \ ,'repl_type': 'vim_nl'
             " \ ,'repl_type': 'vim_raw'

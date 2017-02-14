@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-11
-" @Revision:    57
+" @Last Change: 2017-02-14
+" @Revision:    58
 
 
 
@@ -20,11 +20,14 @@ function! s:prototype.Start() abort dict "{{{3
     let cmd = self.GetReplCmd()
     Tlibtrace 'workbook', 'Start', cmd
     let self.job = job_start(cmd, {'in_mode': 'raw', 'out_mode': 'raw', 'err_mode': 'raw'
-                \ , 'out_timeout': 500, 'err_timeout': 500
                 \ , 'exit_cb': {job, status -> self.ExitCb(job, status)}
                 \ , 'out_cb': {ch, msg -> self.OutCb(ch, msg)}
                 \ , 'err_cb': {ch, msg -> self.ErrCb(ch, msg)}
                 \ })
+    " \ , 'out_timeout': 500, 'err_timeout': 500
+    if has_key(self, 'wait_after_startup')
+        exec 'sleep' self.wait_after_startup
+    endif
 endf
 
 
