@@ -138,7 +138,7 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
         let s:repls[id] = repl
     endif
     let s:buffers[bufnr] = id
-    call workbook#SetupBuffer()
+    call workbook#SetupBuffer(repl)
     if has_key(repl, 'quicklist')
         exec 'nnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#Quicklist(expand("<cword>"))<cr>'
         exec 'vnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#Quicklist(join(tlib#selection#GetSelection("v"), " "))<cr>'
@@ -150,7 +150,8 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
 endf
 
 
-function! workbook#SetupBuffer() abort "{{{3
+function! workbook#SetupBuffer(...) abort "{{{3
+    let repl = a:0 >= 1 ? a:1 : {}
     if !exists('b:workbook_setup_done')
         let b:workbook_setup_done = 1
         autocmd Workbook Bufwipeout <buffer> call workbook#RemoveBuffer(expand("<abuf>"))
@@ -159,8 +160,9 @@ function! workbook#SetupBuffer() abort "{{{3
         command -buffer Workbookrepl call workbook#InteractiveRepl()
         command -buffer Workbookclear call workbook#StripResults(1, line('$'))
         command -buffer Workbookhelp call workbook#Help()
-        exec 'nmap <buffer>' g:workbook#map_evalblock g:workbook#map_op.'ip'
-        exec 'nmap <buffer>' g:workbook#map_evalblockinv ':let b:workbook_insert_results_in_buffer_once = !g:workbook#insert_results_in_buffer<cr>'. g:workbook#map_op.'ip'
+        omap <buffer> <expr> <Plug>WorkbookBlock workbook#WorkbookBlockExpr()
+        exec 'nmap <buffer>' g:workbook#map_evalblock g:workbook#map_op .'<Plug>WorkbookBlock'
+        exec 'nmap <buffer>' g:workbook#map_evalblockinv ':let b:workbook_insert_results_in_buffer_once = !g:workbook#insert_results_in_buffer<cr>'. g:workbook#map_op .'<Plug>WorkbookBlock'
         exec 'nnoremap <buffer>' g:workbook#map_op ':set opfunc=workbook#Op<cr>g@'
         exec 'vnoremap <buffer>' g:workbook#map_op ':<c-u>call workbook#Op(visualmode(), 1)<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_op .'w :call workbook#Print(line("."), line("."))<cr>'
@@ -174,6 +176,13 @@ function! workbook#SetupBuffer() abort "{{{3
             setl omnifunc=workbook#OmniComplete
         endif
     endif
+endf
+
+
+function! workbook#WorkbookBlockExpr() abort "{{{3
+    let repl = workbook#GetRepl()
+    let block = get(repl, 'block_expr', 'ip')
+    return block
 endf
 
 
