@@ -1,4 +1,4 @@
-*workbook.txt*  Interactively work with interpreteted languages
+*workbook.txt*  Interactively work with interpreteted languages (R etc.)
                 Author: Thomas Link, micathom AT gmail com?subject=vim
 
 The goal of this plugin is to provide a similar user experience as 
@@ -12,21 +12,11 @@ Features~
 - Transcribe the interaction with the interpreter.
 - Provide code completion (see 'omnifunc') for supported filetypes.
 
-How it works~
-- Send code to the interpreter.
+How it works: When evaluating a piece of code~
+- The code is sent to the interpreter.
 - A placeholder is inserted in the source code.
 - Upon receiving the result, the placeholder is being replaced with the 
   result
-
-The following interpreters are supported~
-- R (supports code completion)
-- vim
-- bash
-
-Currenty, the main use case is to interact with R. Other than other vim 
-plugins, the workbook plugin has no non-vim dependencies and works at 
-least on Linux and Windows with no problems. The vim and the bash 
-backend are mostly there to get the code right.
 
 How to use this plugin~
 - Open a file with a supported filetype.
@@ -35,6 +25,17 @@ How to use this plugin~
   mode for the specified filetypes.
 - Press <c-cr> to evaluate the current paragraph.
 - Press <localleader>w<F1> for help on other commands and maps.
+
+The following filetypes are supported~
+- R (supports code completion)
+- vim
+- sh (default: bash)
+
+Currenty, the main use case is to interact with R. Other than other vim 
+plugins, the workbook plugin has no non-vim dependencies and works at 
+least on Linux and Windows with no problems. The vim and the bash 
+backend are mostly there to get the code right.
+
 
 -----------------------------------------------------------------------
 Install~
@@ -61,81 +62,26 @@ https://github.com/tomtom/tlib_vim.
 ========================================================================
 Contents~
 
-        g:workbook_autosetup_filetypes ........ |g:workbook_autosetup_filetypes|
-        :Workbook ............................. |:Workbook|
-        :Tlibtrace ............................ |:Tlibtrace|
         g:workbook#map_evalblock .............. |g:workbook#map_evalblock|
         g:workbook#map_evalblockinv ........... |g:workbook#map_evalblockinv|
         g:workbook#map_op ..................... |g:workbook#map_op|
         g:workbook#map_leader ................. |g:workbook#map_leader|
         g:workbook#transcript ................. |g:workbook#transcript|
         g:workbook#insert_results_in_buffer ... |g:workbook#insert_results_in_buffer|
-        g:workbook#handlers ................... |g:workbook#handlers|
-        workbook#GetRepl ...................... |workbook#GetRepl()|
-        workbook#GetID ........................ |workbook#GetID()|
-        workbook#InitBuffer ................... |workbook#InitBuffer()|
-        workbook#SetupBuffer .................. |workbook#SetupBuffer()|
-        :Workbooksend ......................... |:Workbooksend|
-        :Workbookeval ......................... |:Workbookeval|
-        :Workbookrepl ......................... |:Workbookrepl|
-        :Workbookclear ........................ |:Workbookclear|
-        :Workbookhelp ......................... |:Workbookhelp|
-        workbook#UndoSetup .................... |workbook#UndoSetup()|
-        workbook#Help ......................... |workbook#Help()|
         workbook#RemoveBuffer ................. |workbook#RemoveBuffer()|
-        workbook#Op ........................... |workbook#Op()|
-        workbook#Stop ......................... |workbook#Stop()|
-        workbook#StopAll ...................... |workbook#StopAll()|
-        workbook#Print ........................ |workbook#Print()|
-        workbook#StripResults ................. |workbook#StripResults()|
-        workbook#Send ......................... |workbook#Send()|
-        workbook#Eval ......................... |workbook#Eval()|
-        workbook#OmniComplete ................. |workbook#OmniComplete()|
-        workbook#InteractiveRepl .............. |workbook#InteractiveRepl()|
-        workbook#NextCmd ...................... |workbook#NextCmd()|
-        workbook#Quicklist .................... |workbook#Quicklist()|
-        workbook#EditItem ..................... |workbook#EditItem()|
-        g:workbook#repl#transript_new_cmd ..... |g:workbook#repl#transript_new_cmd|
-        g:workbook#repl#transript_drop_cmd .... |g:workbook#repl#transript_drop_cmd|
-        workbook#repl#New ..................... |workbook#repl#New()|
+        g:workbook#ft#r#args .................. |g:workbook#ft#r#args|
+        g:workbook#ft#r#highlight_debug ....... |g:workbook#ft#r#highlight_debug|
+        g:workbook#ft#r#mode .................. |g:workbook#ft#r#mode|
+        workbook#ft#r#Debug ................... |workbook#ft#r#Debug()|
+        workbook#ft#r#Undebug ................. |workbook#ft#r#Undebug()|
         prototype.Input
-        prototype.SetTranscribe
-        prototype.DoTranscribe
-        prototype.DoInsertResultsInBuffer
         prototype.Send
         prototype.Eval
-        prototype.ProcessEval
-        prototype.GetResultLineRx
-        prototype.GetResultLine
-        prototype.SetPlaceholder
-        prototype.GetPlaceholder
         prototype.IsKnownPlaceholder
-        prototype.GetCurrentPlaceholder
-        prototype.PrepareMessage
-        prototype.ConsumeOutput
-        prototype.ConsumeError
-        prototype.SplitMessage
-        prototype.Transcribe
-        prototype.TranscribeNow
-        prototype.ProcessOutput
 
 
-========================================================================
-plugin/workbook.vim~
-
-                                                    *g:workbook_autosetup_filetypes*
-g:workbook_autosetup_filetypes (default: [])
-
-                                                    *:Workbook*
-:Workbook
-
-
-========================================================================
-autoload/workbook.vim~
-
-                                                    *:Tlibtrace*
-:Tlibtrace
-
+------------------------------------------------------------------------
+                                                    *autoload/workbook.vim*
                                                     *g:workbook#map_evalblock*
 g:workbook#map_evalblock       (default: '<c-cr>')
     Evaluate the current paragraph
@@ -165,103 +111,40 @@ g:workbook#insert_results_in_buffer (default: 1)
     b:workbook_insert_results_in_buffer_once or 
     b:workbook_insert_results_in_buffer if existant.
 
-                                                    *g:workbook#handlers*
-g:workbook#handlers            (default: [{'key': 5, 'agent': 'workbook#EditItem', 'key_name': '<c-e>', 'help': 'Edit item'}])
-
-                                                    *workbook#GetRepl()*
-workbook#GetRepl(...)
-
-                                                    *workbook#GetID()*
-workbook#GetID(args, bufnr)
-
-                                                    *workbook#InitBuffer()*
-workbook#InitBuffer(args, ...)
-
-                                                    *workbook#SetupBuffer()*
-workbook#SetupBuffer()
-
-                                                    *:Workbooksend*
-:Workbooksend
-
-                                                    *:Workbookeval*
-:Workbookeval
-
-                                                    *:Workbookrepl*
-:Workbookrepl
-
-                                                    *:Workbookclear*
-:Workbookclear
-
-                                                    *:Workbookhelp*
-:Workbookhelp
-
-                                                    *workbook#UndoSetup()*
-workbook#UndoSetup()
-
-                                                    *workbook#Help()*
-workbook#Help()
-
                                                     *workbook#RemoveBuffer()*
 workbook#RemoveBuffer(bufnr)
     Called from BufDelete
 
-                                                    *workbook#Op()*
-workbook#Op(type, ...)
 
-                                                    *workbook#Stop()*
-workbook#Stop(...)
+------------------------------------------------------------------------
+                                                    *autoload/workbook/ft/r.vim*
+                                                    *g:workbook#ft#r#args*
+g:workbook#ft#r#args           (default: '--silent --no-save '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive'))
+    let g:workbook#ft#r#args = '--slave --no-save'   "
 
-                                                    *workbook#StopAll()*
-workbook#StopAll(...)
+                                                    *g:workbook#ft#r#highlight_debug*
+g:workbook#ft#r#highlight_debug (default: 'SpellRare')
+    Highlight group for debugged functions.
 
-                                                    *workbook#Print()*
-workbook#Print(line1, line2, ...)
+                                                    *g:workbook#ft#r#mode*
+g:workbook#ft#r#mode           (default: '')
+    Defined how to talk to R. Possible values are:
+    '' ......... run via |job_start()|
+    'rserve' ... Use Rserve (doesn't work properly yet)
 
-                                                    *workbook#StripResults()*
-workbook#StripResults(line1, line2, ...)
+                                                    *workbook#ft#r#Debug()*
+workbook#ft#r#Debug(fn)
+    Toggle the debug status of a function.
 
-                                                    *workbook#Send()*
-workbook#Send(code)
-
-                                                    *workbook#Eval()*
-workbook#Eval(code)
-
-                                                    *workbook#OmniComplete()*
-workbook#OmniComplete(findstart, base)
-
-                                                    *workbook#InteractiveRepl()*
-workbook#InteractiveRepl()
-
-                                                    *workbook#NextCmd()*
-workbook#NextCmd()
-
-                                                    *workbook#Quicklist()*
-workbook#Quicklist(word)
-
-                                                    *workbook#EditItem()*
-workbook#EditItem(world, items)
+                                                    *workbook#ft#r#Undebug()*
+workbook#ft#r#Undebug(fn)
+    Undebug a debugged function.
 
 
-========================================================================
-autoload/workbook/repl.vim~
-
-                                                    *g:workbook#repl#transript_new_cmd*
-g:workbook#repl#transript_new_cmd (default: &previewheight .'split')
-
-                                                    *g:workbook#repl#transript_drop_cmd*
-g:workbook#repl#transript_drop_cmd (default: 'drop')
-
-                                                    *workbook#repl#New()*
-workbook#repl#New(args)
-
+------------------------------------------------------------------------
+                                                    *autoload/workbook/repl.vim*
 prototype.Input
     async
-
-prototype.SetTranscribe
-
-prototype.DoTranscribe
-
-prototype.DoInsertResultsInBuffer
 
 prototype.Send
     async
@@ -269,34 +152,8 @@ prototype.Send
 prototype.Eval
     sync
 
-prototype.ProcessEval
-
-prototype.GetResultLineRx
-
-prototype.GetResultLine
-
-prototype.SetPlaceholder
-
-prototype.GetPlaceholder
-
 prototype.IsKnownPlaceholder
     TODO Should this be a function that scans all repls?
-
-prototype.GetCurrentPlaceholder
-
-prototype.PrepareMessage
-
-prototype.ConsumeOutput
-
-prototype.ConsumeError
-
-prototype.SplitMessage
-
-prototype.Transcribe
-
-prototype.TranscribeNow
-
-prototype.ProcessOutput
 
 
 
