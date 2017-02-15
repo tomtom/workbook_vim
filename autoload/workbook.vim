@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-14
-" @Revision:    622
+" @Last Change: 2017-02-15
+" @Revision:    657
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
@@ -18,16 +18,6 @@ if exists(':Tlibtrace') != 2
 endif
 
 
-if !exists('g:workbook#map_evalblock')
-    " Evaluate the current paragraph
-    let g:workbook#map_evalblock = '<c-cr>'   "{{{2
-endif
-
-if !exists('g:workbook#map_evalblockinv')
-    " Evaluate the current paragraph with |g:workbook#insert_results_in_buffer| temporarily inversed.
-    let g:workbook#map_evalblockinv = '<c-s-cr>'   "{{{2
-endif
-
 if !exists('g:workbook#map_op')
     " Operator map
     let g:workbook#map_op = '<localleader>e'   "{{{2
@@ -36,6 +26,21 @@ endif
 if !exists('g:workbook#map_leader')
     " Map leader
     let g:workbook#map_leader = '<localleader>w'   "{{{2
+endif
+
+if !exists('g:workbook#map_evalline')
+    " Evaluate the current line
+    let g:workbook#map_evalline = '<s-cr>'   "{{{2
+endif
+
+if !exists('g:workbook#map_evalblock')
+    " Evaluate the current paragraph
+    let g:workbook#map_evalblock = '<c-cr>'   "{{{2
+endif
+
+if !exists('g:workbook#map_evalblockinv')
+    " Evaluate the current paragraph with |g:workbook#insert_results_in_buffer| temporarily inversed.
+    let g:workbook#map_evalblockinv = '<c-s-cr>'   "{{{2
 endif
 
 if !exists('g:workbook#transcript')
@@ -163,9 +168,9 @@ function! workbook#SetupBuffer(...) abort "{{{3
         omap <buffer> <expr> <Plug>WorkbookBlock workbook#WorkbookBlockExpr()
         exec 'nmap <buffer>' g:workbook#map_evalblock g:workbook#map_op .'<Plug>WorkbookBlock'
         exec 'nmap <buffer>' g:workbook#map_evalblockinv ':let b:workbook_insert_results_in_buffer_once = !g:workbook#insert_results_in_buffer<cr>'. g:workbook#map_op .'<Plug>WorkbookBlock'
+        exec 'nnoremap <buffer>' g:workbook#map_evalline ':call workbook#Print(line("."), line("."))<cr>j$'
         exec 'nnoremap <buffer>' g:workbook#map_op ':set opfunc=workbook#Op<cr>g@'
         exec 'vnoremap <buffer>' g:workbook#map_op ':<c-u>call workbook#Op(visualmode(), 1)<cr>'
-        exec 'nnoremap <buffer>' g:workbook#map_op .'w :call workbook#Print(line("."), line("."))<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'r :call workbook#InteractiveRepl()<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'c :call workbook#StripResults(line("."), line("."))<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'C :call workbook#StripResults(1, line("$"))<cr>'
@@ -181,8 +186,14 @@ endf
 
 function! workbook#WorkbookBlockExpr() abort "{{{3
     let repl = workbook#GetRepl()
-    let block = get(repl, 'block_expr', 'ip')
-    return block
+    let line = getline('.')
+    if line =~ '\S' && synIDattr(synIDtrans(synID(line("."), col("."), 1)), "name") !=# 'Comment'
+        let block = get(repl, 'block_expr', 'ip}')
+        return block
+    else
+        let repl.ignore_input = 1
+        return '$j$'
+    endif
 endf
 
 
@@ -198,12 +209,12 @@ function! workbook#UndoSetup() abort "{{{3
     delcommand Workbookeval
     delcommand Workbookrepl
     delcommand Workbookclear
-    nunmap <buffer> g:workbook#map_evalblock
-    nunmap <buffer> g:workbook#map_evalblockinv
+    exec 'nunmap <buffer>' g:workbook#map_evalblock
+    exec 'nunmap <buffer>' g:workbook#map_evalblockinv
+    exec 'nunmap <buffer>' g:workbook#map_evalline
     exec 'nunmap <buffer>' g:workbook#map_op
     exec 'vunmap <buffer>' g:workbook#map_op
     exec 'nunmap <buffer>' g:workbook#map_op .'w'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'e'
     exec 'nunmap <buffer>' g:workbook#map_leader .'c'
     exec 'nunmap <buffer>' g:workbook#map_leader .'C'
     let &l:omnifunc = b:workbook_orig_omnifunc
@@ -346,28 +357,40 @@ endf
 function! workbook#Print(line1, line2, ...) abort "{{{3
     Tlibtrace 'workbook', a:line1, a:line2
     let repl = workbook#GetRepl()
+    if repl.ignore_input
+        let repl.ignore_input = 0
+        return
+    endif
     let [line1, line2] = workbook#StripResults(a:line1, a:line2, repl)
     Tlibtrace 'workbook', line1, line2
     " TODO allow for in line selection
     let lines = a:0 >= 1 ? a:1 : getline(line1, line2)
     Tlibtrace 'workbook', lines
     let code = join(lines, "\n")
+    if len(lines) == 0 && empty(code)
+        return
+    endif
     let indent = matchstr('^\s\+', code)
     let placeholder = repl.GetPlaceholder(code)
     Tlibtrace 'workbook', placeholder
-    if repl.DoInsertResultsInBuffer()
-        let pline = indent . repl.GetResultLine('p', placeholder)
-        call append(line2, [pline])
-    else
-        let pline = ''
-    endif
-    let rid = repl.id
-    Tlibtrace 'workbook', rid
-    call repl.SetPlaceholder(bufnr('%'), placeholder, pline)
-    " async
-    if repl.DoTranscribe()
-        call repl.Transcribe('c', lines)
-    endif
+    let pos = getpos('.')
+    try
+        if repl.DoInsertResultsInBuffer()
+            let pline = indent . repl.GetResultLine('p', placeholder)
+            call append(line2, [pline])
+        else
+            let pline = ''
+        endif
+        let rid = repl.id
+        Tlibtrace 'workbook', rid
+        call repl.SetPlaceholder(bufnr('%'), placeholder, pline)
+        " async
+        if repl.DoTranscribe()
+            call repl.Transcribe('c', lines)
+        endif
+    finally
+        call setpos('.', pos)
+    endtry
     call repl.Send(code, placeholder)
 endf
 

@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-14
-" @Revision:    370
+" @Last Change: 2017-02-15
+" @Revision:    383
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -16,6 +16,7 @@ endif
 
 let s:prototype = {
             \ 'bufnrs': {},
+            \ 'ignore_input': 0,
             \ 'ignore_output': 0,
             \ 'do_insert_results_in_buffer': g:workbook#insert_results_in_buffer,
             \ 'do_transcribe': g:workbook#transcript,
@@ -165,19 +166,30 @@ function! s:prototype.GetPlaceholderFromEndMark(msg) abort dict "{{{3
 endf
 
 
-function! s:prototype.GetResultLineRx(...) abort dict "{{{3
+function! s:prototype.GetCommentLineRx(...) abort dict "{{{3
     let highlight = a:0 >= 1 ? a:1 : 0
-    let rxf = self.GetResultLineRxf()
+    let rxf = self.GetCommentLineRxf()
     let brx = a:0 >= 2 ? a:2 : (rxf =~ '%s$' ? '.*' : '.\{-}')
     if highlight
         let brx = '\zs'.brx
     endif
-    return printf('^\s*'. rxf. '$', '=[>!?]', brx)
+    return printf('^\s*'. rxf. '$', brx)
+endf
+
+
+function! s:prototype.GetResultLineRx(...) abort dict "{{{3
+    let highlight = a:0 >= 1 ? a:1 : 0
+    let rxf = self.GetCommentLineRxf()
+    let brx = a:0 >= 2 ? a:2 : (rxf =~ '%s$' ? '.*' : '.\{-}')
+    if highlight
+        let brx = '\zs'.brx
+    endif
+    return printf('^\s*'. rxf. '$', '=[>!?] '. brx)
 endf
 
 
 function! s:prototype.GetResultLine(type, result) abort dict "{{{3
-    let rxf = self.GetResultLineRxf()
+    let rxf = self.GetCommentLineRxf()
     if a:type ==# 'p'
         let tid = '=?'
     elseif a:type ==# 'e'
@@ -185,7 +197,7 @@ function! s:prototype.GetResultLine(type, result) abort dict "{{{3
     else
         let tid = '=>'
     endif
-    return printf(rxf, tid, a:result)
+    return printf(rxf, tid .' '. a:result)
 endf
 
 
@@ -300,7 +312,7 @@ endf
 function! s:prototype.Transcribe(type, lines, ...) abort dict "{{{3
     let redraw = a:0 >= 1 ? a:1 : 0
     if a:type =~# '^[ic]$'
-        let lines = map(copy(a:lines), {i,v -> printf(self.GetResultLineRxf(), i == 0 ? '>' : '+', v)})
+        let lines = map(copy(a:lines), {i,v -> printf(self.GetCommentLineRxf(), (i == 0 ? '> ' : '+ '). v)})
         if a:type ==# 'c'
             call insert(lines, '')
         endif
@@ -353,7 +365,7 @@ function! s:prototype.TranscribeNow(timer) abort dict "{{{3
             let b:workbook_log_buffer = 1
             Workbook
             " call workbook#SetupBuffer()
-            let hd = printf(self.GetResultLineRxf(), '!', strftime('%c') .' -- '. self.id)
+            let hd = printf(self.GetCommentLineRxf(), '! '. strftime('%c') .' -- '. self.id)
             call append(0, hd)
         else
             exec g:workbook#repl#transript_drop_cmd fnameescape(tid)
@@ -413,6 +425,7 @@ function! s:prototype.ProcessOutput(...) abort dict "{{{3
             let pline = pdef.pline
             let bufnr = bufnr('%')
             let pos = getpos('.')
+            " echom "DBG" string(pos)
             Tlibtrace 'workbook', 'ProcessOutput', bufnr, pos, pline
             try
                 if empty(pline)
@@ -454,6 +467,7 @@ function! s:prototype.ProcessOutput(...) abort dict "{{{3
                 call setpos('.', pos)
                 Tlibtrace 'workbook', 'ProcessOutput', pos, getpos('.')
             endtry
+            " echom "DBG" string(pos)
         endif
     endif
 endf

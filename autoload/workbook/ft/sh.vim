@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-14
-" @Revision:    41
+" @Last Change: 2017-02-15
+" @Revision:    43
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
@@ -38,7 +38,7 @@ endif
 
 
 if !exists('g:workbook#ft#sh#comment_rxf')
-    let g:workbook#ft#sh#comment_rxf = '#%s %s'   "{{{2
+    let g:workbook#ft#sh#comment_rxf = '#%s'   "{{{2
 endif
 
 
@@ -76,7 +76,7 @@ function! s:prototype.ExitFiletype(args) abort dict "{{{3
 endf
 
 
-function! s:prototype.GetResultLineRxf() abort dict "{{{3
+function! s:prototype.GetCommentLineRxf() abort dict "{{{3
     return g:workbook#ft#sh#comment_rxf
 endf
 

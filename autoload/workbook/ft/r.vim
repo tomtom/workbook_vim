@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-14
-" @Revision:    399
+" @Last Change: 2017-02-15
+" @Revision:    400
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -44,7 +44,7 @@ endif
 
 
 if !exists('g:workbook#ft#r#comment_rxf')
-    let g:workbook#ft#r#comment_rxf = '#%s %s'   "{{{2
+    let g:workbook#ft#r#comment_rxf = '#%s'   "{{{2
 endif
 
 
@@ -201,7 +201,7 @@ if !empty(g:workbook#ft#r#wait_after_send_line)
 endif
 
 
-function! s:prototype.GetResultLineRxf() abort dict "{{{3
+function! s:prototype.GetCommentLineRxf() abort dict "{{{3
     return g:workbook#ft#r#comment_rxf
 endf
 
