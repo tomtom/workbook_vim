@@ -1,25 +1,21 @@
-*workbook.txt*  Interactively work with interpreteted languages (R etc.)
+*workbook.txt*  Notebook-like interaction with R etc.
                 Author: Thomas Link, micathom AT gmail com?subject=vim
 
-The goal of this plugin is to provide a similar user experience as 
-Mathematica or Jupyter (within the limits of a text editor like vim).
+The long-term goal of this plugin is to provide notebook-like interaction with 
+interpreted languages similar to the Mathematica or Jupyter (within the limits 
+of a text editor like vim).
 
 Features~
 - Run an interpreter as an inferior process.
-- Provide means to evaluate code in this process (asynchronously without 
-  blocking vim).
-- Insert (or dynamically update) results right into the source code.
+- Send code to this process (asynchronously without blocking vim).
+- Insert (or dynamically update) the results into the source code (as 
+  commented out block below the respective source code).
 - Transcribe the interaction with the interpreter.
 - Provide code completion (see 'omnifunc') for supported filetypes.
 
-How it works: When evaluating a piece of code~
-- The code is sent to the interpreter.
-- A placeholder is inserted in the source code.
-- Upon receiving the result, the placeholder is being replaced with the 
-  result.
-
 How to use this plugin~
-- Open a file with a supported filetype.
+- Open a file with a supported filetype (see below or 
+  |workbook#GetSupportedFiletypes()|).
 - Type |:Workbook| or add the filetype to 
   |g:workbook_autosetup_filetypes| to automatically enable the workbook 
   mode for the specified filetypes.
@@ -62,13 +58,24 @@ https://github.com/tomtom/tlib_vim.
 ========================================================================
 Contents~
 
-        g:workbook#map_evalblock .............. |g:workbook#map_evalblock|
-        g:workbook#map_evalblockinv ........... |g:workbook#map_evalblockinv|
+        :Workbook ............................. |:Workbook|
+        :Workbooks ............................ |:Workbooks|
         g:workbook#map_op ..................... |g:workbook#map_op|
         g:workbook#map_leader ................. |g:workbook#map_leader|
+        g:workbook#map_evalline ............... |g:workbook#map_evalline|
+        g:workbook#map_evalblock .............. |g:workbook#map_evalblock|
+        g:workbook#map_evalinsertblock ........ |g:workbook#map_evalinsertblock|
         g:workbook#transcript ................. |g:workbook#transcript|
         g:workbook#insert_results_in_buffer ... |g:workbook#insert_results_in_buffer|
-        workbook#RemoveBuffer ................. |workbook#RemoveBuffer()|
+        :Workbooksend ......................... |:Workbooksend|
+        :Workbookeval ......................... |:Workbookeval|
+        :Workbookrepl ......................... |:Workbookrepl|
+        :Workbookclear ........................ |:Workbookclear|
+        :Workbookhelp ......................... |:Workbookhelp|
+        :Workbookreset ........................ |:Workbookreset|
+        workbook#ResetRepl .................... |workbook#ResetRepl()|
+        workbook#GetSupportedFiletypes ........ |workbook#GetSupportedFiletypes()|
+        g:workbook#ft#fsharp#args ............. |g:workbook#ft#fsharp#args|
         g:workbook#ft#r#args .................. |g:workbook#ft#r#args|
         g:workbook#ft#r#highlight_debug ....... |g:workbook#ft#r#highlight_debug|
         g:workbook#ft#r#mode .................. |g:workbook#ft#r#mode|
@@ -81,15 +88,28 @@ Contents~
 
 
 ------------------------------------------------------------------------
+                                                    *plugin/workbook.vim*
+                                                    *:Workbook*
+:Workbook [--filetype=FILETYPE] [--cmd=CMD] [--args=ARGS] [-- OTHER]
+    If no FILETYPE is specified 'filetype' is used.
+    CMD and ARGS can be used to override the default parameters for the 
+    gived filetype.
+    OTHER arguments are added to CMD ARGS when starting the inferior 
+    process.
+
+    Additional filetype-specific arguments:
+    r:
+      --[no-]save ...... Save an image (default: --no-save)
+      --[no-]restore ... Restore an image (default: --restore)
+
+                                                    *:Workbooks*
+:Workbooks
+    Select a repl from a list of inferior processes. The list also 
+    included their status.
+
+
+------------------------------------------------------------------------
                                                     *autoload/workbook.vim*
-                                                    *g:workbook#map_evalblock*
-g:workbook#map_evalblock       (default: '<c-cr>')
-    Evaluate the current paragraph
-
-                                                    *g:workbook#map_evalblockinv*
-g:workbook#map_evalblockinv    (default: '<c-s-cr>')
-    Evaluate the current paragraph with |g:workbook#insert_results_in_buffer| temporarily inversed.
-
                                                     *g:workbook#map_op*
 g:workbook#map_op              (default: '<localleader>e')
     Operator map
@@ -98,28 +118,78 @@ g:workbook#map_op              (default: '<localleader>e')
 g:workbook#map_leader          (default: '<localleader>w')
     Map leader
 
+                                                    *g:workbook#map_evalline*
+g:workbook#map_evalline        (default: '<s-cr>')
+    Evaluate the current line.
+
+                                                    *g:workbook#map_evalblock*
+g:workbook#map_evalblock       (default: '<c-cr>')
+    Evaluate the current paragraph or the current visual selection.
+
+                                                    *g:workbook#map_evalinsertblock*
+g:workbook#map_evalinsertblock (default: '<c-s-cr>')
+    Evaluate the current paragraph and always insert the result.
+
                                                     *g:workbook#transcript*
 g:workbook#transcript          (default: 1)
     If true, maintain a transcript
 
                                                     *g:workbook#insert_results_in_buffer*
-g:workbook#insert_results_in_buffer (default: 1)
-    If true, insert the results of an evaluation below the evaluated 
-    code.
+g:workbook#insert_results_in_buffer (default: -1)
+    If not zero, insert the results of an evaluation below the 
+    evaluated code.
+    If 1, insert the result.
+    If -1, insert the result only if the transcipt isn't visible.
 
     This parameter will be overridden by the value of 
     b:workbook_insert_results_in_buffer_once or 
     b:workbook_insert_results_in_buffer if existant.
 
-                                                    *workbook#RemoveBuffer()*
-workbook#RemoveBuffer(bufnr)
-    Called from BufDelete
+                                                    *:Workbooksend*
+:Workbooksend
+    Send code to the REPL.
+
+                                                    *:Workbookeval*
+:Workbookeval
+    Eval some code and display the result.
+
+                                                    *:Workbookrepl*
+:Workbookrepl
+    Remove the current block's placeholder.
+
+                                                    *:Workbookclear*
+:Workbookclear
+    Remove any placeholders in the current buffer.
+
+                                                    *:Workbookhelp*
+:Workbookhelp
+    Display help on available maps etc.
+
+                                                    *:Workbookreset*
+:Workbookreset
+    Reset a REPL's state.
+
+                                                    *workbook#ResetRepl()*
+workbook#ResetRepl()
+    When a REPL is stuck, some REPLs support a way to reset the repl's 
+    state.
+
+                                                    *workbook#GetSupportedFiletypes()*
+workbook#GetSupportedFiletypes()
+    Return a list of supported filetypes.
+
+
+------------------------------------------------------------------------
+                                                    *autoload/workbook/ft/fsharp.vim*
+                                                    *g:workbook#ft#fsharp#args*
+g:workbook#ft#fsharp#args      (default: '--nologo -g --tailcalls+ --warn:5 --checked --readline-')
+    let g:workbook#ft#fsharp#args = '--slave --no-save'   "
 
 
 ------------------------------------------------------------------------
                                                     *autoload/workbook/ft/r.vim*
                                                     *g:workbook#ft#r#args*
-g:workbook#ft#r#args           (default: '--silent --no-save '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive'))
+g:workbook#ft#r#args           (default: '--silent '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive'))
     let g:workbook#ft#r#args = '--slave --no-save'   "
 
                                                     *g:workbook#ft#r#highlight_debug*
