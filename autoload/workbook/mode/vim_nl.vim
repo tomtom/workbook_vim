@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-14
-" @Revision:    35
+" @Last Change: 2017-02-23
+" @Revision:    36
 
 
 
@@ -73,8 +73,15 @@ function! s:prototype.Stop(args) abort dict "{{{3
 endf
 
 
-function! s:prototype.IsReady() abort dict "{{{3
-    return job_status(self.job) == 'run'
+function! s:prototype.IsReady(...) abort dict "{{{3
+    let warn = a:0 >= 1 ? a:1 : !has_key(self, 'teardown')
+    let rv = job_status(self.job) == 'run'
+    if !rv && warn
+        echohl WarningMsg
+        echom 'Workbook.Send: REPL' self.id 'is not ready'
+        echohl NONE
+    endif
+    return rv
 endf
 
 

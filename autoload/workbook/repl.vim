@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-15
-" @Revision:    383
+" @Last Change: 2017-03-02
+" @Revision:    470
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -20,7 +20,6 @@ let s:prototype = {
             \ 'ignore_output': 0,
             \ 'do_insert_results_in_buffer': g:workbook#insert_results_in_buffer,
             \ 'do_transcribe': g:workbook#transcript,
-            \ 'continue_last_line': 0,
             \ 'next_cmd': [],
             \ 'next_process_output': '',
             \ 'placeholders': {},
@@ -64,12 +63,8 @@ endf
 " async
 function! s:prototype.Input(code, nl) abort dict "{{{3
     if self.IsReady()
-        Tlibtrace 'workbook', 'Input', len(a:code)
+        Tlibtrace 'workbook', 'Input', len(a:code), a:nl
         call self.SendToRepl(a:code, a:nl)
-    elseif !has_key(self, 'teardown')
-        echohl WarningMsg
-        echom 'Workbook.Send: REPL' self.id 'is not running'
-        echohl NONE
     endif
 endf
 
@@ -85,17 +80,25 @@ endf
 
 
 function! s:prototype.DoInsertResultsInBuffer() abort dict "{{{3
-    if exists('b:workbook_log_buffer') || self.do_insert_results_in_buffer < 0
-        let do_insert_results_in_buffer = 0
-    elseif exists('b:workbook_insert_results_in_buffer_once')
+    Tlibtrace 'workbook', 'DoInsertResultsInBuffer', self.do_insert_results_in_buffer
+    if exists('b:workbook_insert_results_in_buffer_once') && self.do_insert_results_in_buffer != 0
         let do_insert_results_in_buffer = b:workbook_insert_results_in_buffer_once
         unlet! b:workbook_insert_results_in_buffer
+    elseif exists('b:workbook_log_buffer') || self.do_insert_results_in_buffer < 0
+        let do_insert_results_in_buffer = 0
     elseif exists('b:workbook_insert_results_in_buffer')
         let do_insert_results_in_buffer = b:workbook_insert_results_in_buffer
     else
         let do_insert_results_in_buffer = self.do_insert_results_in_buffer
     endif
-    return do_insert_results_in_buffer
+    Tlibtrace 'workbook', 'DoInsertResultsInBuffer', do_insert_results_in_buffer
+    if do_insert_results_in_buffer < 0
+        let bufname = self.GetTranscriptId()
+        let win = bufwinnr(bufname)
+        return win == -1
+    else
+        return do_insert_results_in_buffer
+    endif
 endf
 
 
@@ -107,10 +110,6 @@ function! s:prototype.Send(code, ...) abort dict "{{{3
         let code = self.DoInsertResultsInBuffer() && !empty(placeholder) && has_key(self, 'WrapCode') ? self.WrapCode(placeholder, a:code) : a:code
         Tlibtrace 'workbook', 'Send', code
         call self.SendToRepl(code, 1, placeholder)
-    elseif !has_key(self, 'teardown')
-        echohl WarningMsg
-        echom 'Workbook.Send: REPL' self.id 'is not running'
-        echohl NONE
     endif
 endf
 
@@ -138,11 +137,6 @@ function! s:prototype.Eval(code) abort dict "{{{3
             endif
         endtry
     else
-        if !has_key(self, 'teardown')
-            echohl WarningMsg
-            echom 'Workbook.Eval: REPL' self.id 'is not running'
-            echohl NONE
-        endif
         let result = ''
     endif
     return result
@@ -155,14 +149,19 @@ function! s:prototype.ProcessEval(lines) abort dict "{{{3
 endf
 
 
-function! s:prototype.GetEndMark(...) abort dict "{{{3
+function! s:prototype.GetMark(...) abort dict "{{{3
     let p = a:0 >= 1 ? a:1 : self.GetCurrentPlaceholder()
     return printf('---- %s ----', p)
 endf
 
 
+function! s:prototype.GetPlaceholderFromBeginMark(msg) abort dict "{{{3
+    return matchstr(a:msg, '^WorkbookBEGIN:---- \zs\S\+\ze ----$')
+endf
+
+
 function! s:prototype.GetPlaceholderFromEndMark(msg) abort dict "{{{3
-    return matchstr(a:msg, '^---- \zs\S\+\ze ----$')
+    return matchstr(a:msg, '^WorkbookEND:---- \zs\S\+\ze ----$')
 endf
 
 
@@ -189,7 +188,7 @@ endf
 
 
 function! s:prototype.GetResultLine(type, result) abort dict "{{{3
-    let rxf = self.GetCommentLineRxf()
+    let f = self.GetResultLinef()
     if a:type ==# 'p'
         let tid = '=?'
     elseif a:type ==# 'e'
@@ -197,7 +196,7 @@ function! s:prototype.GetResultLine(type, result) abort dict "{{{3
     else
         let tid = '=>'
     endif
-    return printf(rxf, tid .' '. a:result)
+    return printf(f, tid .' '. a:result)
 endf
 
 
@@ -251,24 +250,34 @@ function! s:prototype.ConsumeOutput(type, msg, ...) abort dict "{{{3
         let parts = map(parts, {i, val -> self.ProcessLine(val)})
     endif
     for part in parts
-        if has_key(self, 'GetPlaceholderFromEndMark')
-            let placeholder = empty(placeholder0) ? self.GetPlaceholderFromEndMark(part) : ''
-        else
-            let placeholder = ''
+        Tlibtrace 'workbook', 'ConsumeOutput', part
+        if empty(placeholder0)
+            if has_key(self, 'GetPlaceholderFromBeginMark')
+                let placeholder = self.GetPlaceholderFromBeginMark(part)
+                if !empty(placeholder)
+                    Tlibtrace 'workbook', 'ConsumeOutput', 'BEGIN', placeholder
+                    call self.FlushOutput()
+                    continue
+                endif
+            endif
+            if has_key(self, 'GetPlaceholderFromEndMark')
+                let placeholder = self.GetPlaceholderFromEndMark(part)
+                if !empty(placeholder)
+                    Tlibtrace 'workbook', 'ConsumeOutput', 'END', placeholder
+                    call self.ProcessOutput(placeholder)
+                    continue
+                endif
+            endif
         endif
-        Tlibtrace 'workbook', 'ConsumeOutput', placeholder, part
-        if !empty(placeholder) && self.IsKnownPlaceholder(placeholder)
-            call self.ProcessOutput(placeholder)
-        else
-            if self.DoTranscribe() && empty(self.next_process_output)
-                call self.Transcribe('r', [part])
-            endif
-            if get(self, 'ignore_output', 0) == 0 && !empty(part)
-                let line = !empty(self.next_process_output) ? part : self.GetResultLine(a:type, part)
-                call add(self.lines_buffer, line)
-            endif
+        if self.DoTranscribe() && empty(self.next_process_output)
+            call self.Transcribe('r', [part])
+        endif
+        if get(self, 'ignore_output', 0) == 0 && !empty(part)
+            let line = !empty(self.next_process_output) ? part : self.GetResultLine(a:type, part)
+            call add(self.lines_buffer, line)
         endif
     endfor
+    Tlibtrace 'workbook', 'ConsumeOutput', placeholder0
     if !empty(placeholder0)
         call self.ProcessOutput(placeholder0)
     endif
@@ -299,9 +308,9 @@ function! s:prototype.SplitMessage(msg) abort dict "{{{3
     Tlibtrace 'workbook', 'SplitMessage', a:msg
     if type(a:msg) == v:t_string
         let parts = split(a:msg, "\n", 1)
-        while !empty(parts) && empty(parts[-1])
-            call remove(parts, -1)
-        endwh
+        " while !empty(parts) && empty(parts[-1])
+        "     call remove(parts, -1)
+        " endwh
     else
         let parts = a:msg
     endif
@@ -309,30 +318,66 @@ function! s:prototype.SplitMessage(msg) abort dict "{{{3
 endf
 
 
+" function! s:prototype.Trace(id, ...) abort dict "{{{3
+"     Tlibtrace 'workbook', a:id, a:000
+"     let line = printf('%s: %s', a:id, join(map(a:000, {i,v -> string(v)}), '; '))
+"     call self.Transcribe('d', [line])
+" endf
+
+
 function! s:prototype.Transcribe(type, lines, ...) abort dict "{{{3
-    let redraw = a:0 >= 1 ? a:1 : 0
-    if a:type =~# '^[ic]$'
-        let lines = map(copy(a:lines), {i,v -> printf(self.GetCommentLineRxf(), (i == 0 ? '> ' : '+ '). v)})
-        if a:type ==# 'c'
-            call insert(lines, '')
-        endif
-    elseif a:type =~# '^e$'
-        let lines = map(copy(a:lines), {i,v -> printf("!!!\t%s", v)})
-    else
-        let lines = a:lines
+    Tlibtrace 'workbook', 'Transcribe', a:type, a:lines
+    if empty(a:lines)
+        return
     endif
-    " if self.continue_last_line && !empty(self.output_buffer)
-    "     let self.output_buffer[-1] .= remove(lines, 0)
-    " endif
-    call extend(self.output_buffer, lines)
+    let redraw = a:0 >= 1 ? a:1 : 0
+    let lines = copy(a:lines)
+    let start_new_line = a:type =~# '^[ed]$'
+    if a:type =~# '^[ic]$'
+        let lines = map(lines, {i,v -> printf(self.GetResultLinef(), (i == 0 ? '> ' : '+ '). v)})
+        if a:type ==# 'c'
+            call add(lines, '')
+        endif
+    else
+        let lines = filter(lines, {i,v -> !empty(v)})
+        if a:type ==# 'e'
+            let lines = map(lines, {i,v -> printf("!!!\t%s", v)})
+        elseif a:type ==# 'd'
+            let lines = map(lines, {i,v -> printf("DDD\t%s", v)})
+        endif
+    endif
+    Tlibtrace 'workbook', lines
+    if empty(lines)
+        return
+    endif
+    if !empty(self.output_buffer) && (!start_new_line || empty(self.output_buffer[-1]))
+        let [first; rest] = lines
+        Tlibtrace 'workbook', first, rest
+        let self.output_buffer[-1] .= first
+        if !empty(rest)
+            call extend(self.output_buffer, rest)
+        else
+            call add(self.output_buffer, '')
+        endif
+    else
+        call extend(self.output_buffer, lines)
+    endif
+    " call extend(self.output_buffer, lines)
     if has_key(self, 'redraw_timer')
         call timer_stop(self.redraw_timer)
     endif
     if redraw
         call self.TranscribeNow(get(self, 'redraw_timer', 0))
+        redraw
     else
         let self.redraw_timer = timer_start(500, self.TranscribeNow)
     endif
+endf
+
+
+function! s:prototype.GetTranscriptId() abort dict "{{{3
+    let tid = '__Transript_'. self.id  .'__'
+    return tid
 endf
 
 
@@ -345,28 +390,33 @@ function! s:prototype.TranscribeNow(timer) abort dict "{{{3
     let tabnr = tabpagenr()
     let winnr = winnr()
     let bufnr = bufnr('%')
-    let tid = '__Transript_'. self.id  .'__'
+    let tid = self.GetTranscriptId()
     try
         if bufnr(tid) == -1 || (!self.DoInsertResultsInBuffer() && bufwinnr(tid) == -1)
-            let ft = self.filetype
-            exec g:workbook#repl#transript_new_cmd fnameescape(tid)
-            " exec 'lcd' fnameescape(self.working_dir)
-            setlocal buftype=nofile
-            setlocal noswapfile
-            " setlocal nobuflisted
-            " setlocal foldmethod=manual
-            " setlocal foldcolumn=0
-            setlocal nospell
-            setlocal modifiable
-            setlocal noreadonly
-            exec 'setl ft='. ft
-            syntax match WorkbookError /^!!!\t.*$/
-            hi def link WorkbookError ErrorMsg
-            let b:workbook_log_buffer = 1
-            Workbook
-            " call workbook#SetupBuffer()
-            let hd = printf(self.GetCommentLineRxf(), '! '. strftime('%c') .' -- '. self.id)
-            call append(0, hd)
+            if !exists('b:workbook_log_buffer')
+                let ft = self.filetype
+                exec g:workbook#repl#transript_new_cmd fnameescape(tid)
+                " exec 'lcd' fnameescape(self.working_dir)
+                setlocal buftype=nofile
+                setlocal noswapfile
+                " setlocal nobuflisted
+                " setlocal foldmethod=manual
+                " setlocal foldcolumn=0
+                setlocal nospell
+                setlocal modifiable
+                setlocal noreadonly
+                exec 'setl ft='. get(self, 'transcript_filetype', ft)
+                syntax match WorkbookError /^!!!\t.*$/
+                hi def link WorkbookError ErrorMsg
+                syntax match WorkbookDebug /^\CDDD\t.*$/
+                hi def link WorkbookDebug NonText
+                let b:workbook_log_buffer = self.id
+                let self.bufnr = bufnr('%')
+                Workbook
+                " call workbook#SetupBuffer()
+                let hd = printf(self.GetResultLinef(), '! '. strftime('%c') .' -- '. self.id)
+                call append(0, hd)
+            endif
         else
             exec g:workbook#repl#transript_drop_cmd fnameescape(tid)
         endif
@@ -383,13 +433,21 @@ function! s:prototype.TranscribeNow(timer) abort dict "{{{3
         if winnr() != winnr
             exec winnr 'wincmd w'
         endif
-        if bufnr('%') != bufnr
+        if self.bufnr != bufnr
             exec 'hide buffer' bufnr
         endif
     endtry
     if bufwinnr(tid) == -1
         exec g:workbook#repl#transript_new_cmd fnameescape(tid)
     endif
+endf
+
+
+function! s:prototype.FlushOutput() abort dict "{{{3
+    Tlibtrace 'workbook', 'FlushOutput'
+    let lines = self.lines_buffer
+    let self.lines_buffer = []
+    return lines
 endf
 
 
@@ -410,12 +468,11 @@ function! s:prototype.ProcessOutput(...) abort dict "{{{3
         throw 'Workbook: Internal error: Placeholder not in queue: '. string(placeholder)
     else
         let obsoletes = remove(self.placeholder_queue, 0, pi)
-        let lines = self.lines_buffer
+        let lines = self.FlushOutput()
+        Tlibtrace 'workbook', 'ProcessOutput', lines
         if has_key(self, 'FilterOutputLines')
             let lines = self.FilterOutputLines(lines)
         endif
-        Tlibtrace 'workbook', 'ProcessOutput', lines
-        let self.lines_buffer = []
         let pdef = remove(self.placeholders, placeholder)
         if !empty(self.next_process_output)
             call call(self.next_process_output, [lines])

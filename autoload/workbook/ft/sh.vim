@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-15
-" @Revision:    43
+" @Last Change: 2017-02-26
+" @Revision:    62
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
@@ -13,6 +13,10 @@ if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     endif
 endif
 
+
+" " Simulate interactive use:
+" script -f --return -c bash /dev/null
+" :nodoc:
 
 if !exists('g:workbook#ft#sh#cmd')
     let g:workbook#ft#sh#cmd = 'bash'   "{{{2
@@ -37,11 +41,6 @@ if !exists('g:workbook#ft#sh#init_code')
 endif
 
 
-if !exists('g:workbook#ft#sh#comment_rxf')
-    let g:workbook#ft#sh#comment_rxf = '#%s'   "{{{2
-endif
-
-
 if !exists('g:workbook#ft#sh#quicklist')
     let g:workbook#ft#sh#quicklist = []   "{{{2
     if exists('g:workbook#ft#r_quicklist_etc')
@@ -55,7 +54,8 @@ if !exists('g:workbook#ft#sh#wait_after_send_line')
 endif
 
 
-let s:wrap_code_f = "%s\necho '%s'"   "{{{2
+" let s:wrap_code_f = "%s\necho '%s'"   "{{{2
+let s:WrapCode = {p, c -> printf("echo 'WorkbookBEGIN:%s'\n%s\necho 'WorkbookEND:%s'", p, c, p)}
 
 
 let s:prototype = {}
@@ -77,13 +77,24 @@ endf
 
 
 function! s:prototype.GetCommentLineRxf() abort dict "{{{3
-    return g:workbook#ft#sh#comment_rxf
+    return '#%s'
+endf
+
+
+function! s:prototype.GetResultLinef() abort dict "{{{3
+    return '#%s'
 endf
 
 
 function! s:prototype.WrapCode(placeholder, code) abort dict "{{{3
-    let wcode = printf(s:wrap_code_f, a:code, self.GetEndMark(a:placeholder))
+    " let wcode = printf(s:wrap_code_f, a:code, self.GetMark(a:placeholder))
+    let wcode = s:WrapCode(self.GetMark(a:placeholder), a:code)
     return wcode
 endf
 
+
+" function! s:prototype.Complete(text) abort dict "{{{3
+"     let cs = self.Eval(a:text ."\<esc>\<esc>\<c-c>")
+"     return split(cs, "[\t\n\j]")
+" endf
 

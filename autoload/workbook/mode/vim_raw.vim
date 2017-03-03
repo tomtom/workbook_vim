@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-14
-" @Revision:    58
+" @Last Change: 2017-02-25
+" @Revision:    79
 
 
 
@@ -20,7 +20,8 @@ function! s:prototype.Start() abort dict "{{{3
     let cmd = self.GetReplCmd()
     Tlibtrace 'workbook', 'Start', cmd
     let self.job = job_start(cmd, {'in_mode': 'raw', 'out_mode': 'raw', 'err_mode': 'raw'
-                \ , 'exit_cb': {job, status -> self.ExitCb(job, status)}
+                \ , 'close_cb': {ch -> self.CloseCb(ch, 'closed')}
+                \ , 'exit_cb': {job, status -> self.ExitCb(job, status, 'exited')}
                 \ , 'out_cb': {ch, msg -> self.OutCb(ch, msg)}
                 \ , 'err_cb': {ch, msg -> self.ErrCb(ch, msg)}
                 \ })
@@ -31,9 +32,18 @@ function! s:prototype.Start() abort dict "{{{3
 endf
 
 
-function! s:prototype.ExitCb(job, status) abort dict "{{{3
+function! s:prototype.CloseCb(job, type) abort dict "{{{3
     echohl WarningMsg
-    echom 'Workbook: REPL' self.id 'has exited with status' a:status
+    echom 'Workbook: REPL' self.id a:type
+    echohl NONE
+    " let self.teardown = 1
+    " call workbook#Stop({}, self)
+endf
+
+
+function! s:prototype.ExitCb(job, status, type) abort dict "{{{3
+    echohl WarningMsg
+    echom 'Workbook: REPL' self.id a:type 'with status' a:status
     echohl NONE
     let self.teardown = 1
     call workbook#Stop({}, self)
@@ -41,6 +51,7 @@ endf
 
 
 function! s:prototype.PreprocessCallbackRawMessage(msg) abort dict "{{{3
+    Tlibtrace 'workbook', 'PreprocessCallbackRawMessage', a:msg
     if has_key(self, 'PreprocessRawMessage')
         return self.PreprocessRawMessage(a:msg)
     else
@@ -65,6 +76,7 @@ endf
 
 
 function! s:prototype.Stop(args) abort dict "{{{3
+    Tlibtrace 'workbook', 'Stop', a:args
     if has_key(self, 'ExitFiletype')
         call self.ExitFiletype(a:args)
     endif
@@ -74,24 +86,36 @@ function! s:prototype.Stop(args) abort dict "{{{3
 endf
 
 
-function! s:prototype.IsReady() abort dict "{{{3
-    return job_status(self.job) == 'run'
+function! s:prototype.IsReady(...) abort dict "{{{3
+    let warn = a:0 >= 1 ? a:1 : !has_key(self, 'teardown')
+    let rv = job_status(self.job) == 'run'
+    Tlibtrace 'workbook', 'IsReady', warn, rv
+    if !rv && warn
+        echohl WarningMsg
+        echom 'Workbook.Send: REPL' self.id 'is not ready'
+        echohl NONE
+    endif
+    return rv
 endf
 
 
 function! s:prototype.SendToRepl(code, ...) abort dict "{{{3
     let nl = a:0 >= 1 ? a:1 : 0
     let placeholder = a:0 >= 2 ? a:2 : ''
+    Tlibtrace 'workbook', 'SendToRepl', nl, placeholder, a:code
     let code = nl ? a:code ."\n" : a:code
     let channel = job_getchannel(self.job)
     if nl && has_key(self, 'ProcessSendLine')
         for line in split(code, '\n')
             if self.IsReady()
-                call self.ProcessSendLine({-> ch_sendraw(channel, line ."\n")})
+                Tlibtrace 'workbook', 'SendToRepl', line
+                let sent = self.ProcessSendLine({-> ch_sendraw(channel, line ."\n")})
+                " Tlibtrace 'workbook', 'SendToRepl', sent
             endif
         endfor
     else
         if self.IsReady()
+            Tlibtrace 'workbook', 'SendToRepl', code
             call ch_sendraw(channel, code)
         endif
     endif

@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-15
-" @Revision:    400
+" @Last Change: 2017-03-02
+" @Revision:    453
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -23,7 +23,7 @@ endif
 
 if !exists('g:workbook#ft#r#args')
     " let g:workbook#ft#r#args = '--slave --no-save'   "{{{2
-    let g:workbook#ft#r#args = '--silent --no-save '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive')   "{{{2
+    let g:workbook#ft#r#args = '--silent '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive')   "{{{2
 endif
 
 
@@ -43,11 +43,6 @@ endif
 " endif
 
 
-if !exists('g:workbook#ft#r#comment_rxf')
-    let g:workbook#ft#r#comment_rxf = '#%s'   "{{{2
-endif
-
-
 if !exists('g:workbook#ft#r#quicklist')
     let g:workbook#ft#r#quicklist = ['??"%s"', 'str(%s)', 'summary(%s)', 'head(%s)', 'edit(%s)', 'fix(%s)', 'debugger()', 'traceback()', 'install.packages("%s")', 'update.packages()', 'example("%s")', 'graphics.off()']   "{{{2
     if exists('g:workbook#ft#r_quicklist_etc')
@@ -62,7 +57,7 @@ if !exists('g:workbook#ft#r#highlight_debug')
 endif
 
 
-if !exists('g:workbook#ft#r#use_rserve')
+if !exists('g:workbook#ft#r#mode')
     " Defined how to talk to R. Possible values are:
     " '' ......... run via |job_start()|
     " 'rserve' ... Use Rserve (doesn't work properly yet)
@@ -80,8 +75,15 @@ if !exists('g:workbook#ft#r#wait_after_startup')
 endif
 
 
-let s:wrap_code_f = "tryCatch(with(withVisible({%s\n}), if (visible) print(value)), finally = {cat(\"\\n%s\\n\"); flush.console()})"   "{{{2
+" let s:wrap_code_f = "tryCatch(with(withVisible({%s\n}), if (visible) print(value)), finally = {cat(\"\\n%s\\n\"); flush.console()})"   "{{{2
 " let s:wrap_code_f = "{%s\n}; cat(\"\\n%s\\n\"); flush.console()"   "{{{2
+" let s:wrap_code_f = "%s\ncat(\"\\n%s\\n\"); flush.console()\n"   "{{{2
+let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", p, c, p)}
+
+" function! s:WrapCode(p, c) abort "{{{3
+"     Tlibtrace 'workbook', a:p, a:c
+"     return printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", a:p, a:c, a:p)
+" endf
 
 
 let s:prototype = {'debugged': {}
@@ -98,11 +100,23 @@ endf
 
 
 function! s:prototype.GetFiletypeCmdAndArgs() abort dict "{{{3
-    return [g:workbook#ft#r#cmd, g:workbook#ft#r#args]
+    let args = g:workbook#ft#r#args
+    if get(self.args, 'save', 0)
+        let args .= ' --save'
+    else
+        let args .= ' --no-save'
+    endif
+    if get(self.args, 'resore', 1)
+        let args .= ' --restore'
+    else
+        let args .= ' --no-restore'
+    endif
+    return [g:workbook#ft#r#cmd, args]
 endf
 
 
 function! s:prototype.InitFiletype() abort dict "{{{3
+    Tlibtrace 'workbook', 'InitFiletype'
     if filereadable(g:workbook#ft#r#init_script)
         call self.Send(printf('source("%s")', substitute(g:workbook#ft#r#init_script, '\\', '/', 'g')))
     endif
@@ -117,13 +131,16 @@ endf
 
 
 function! s:prototype.ExitFiletype(args) abort dict "{{{3
+    Tlibtrace 'workbook', 'ExitFiletype', a:args
     let qargs = get(a:args, 'save', 0) || get(self, 'save', 0) ? 'save = "yes"' : ''
     let cmd = printf('q(%s)', qargs)
+    Tlibtrace 'workbook', 'ExitFiletype', cmd
     call self.Send(cmd)
 endf
 
 
 function! s:prototype.InitBufferFiletype() abort dict "{{{3
+    Tlibtrace 'workbook', 'InitBufferFiletype'
     if &buftype != 'nofile'
         let filename = substitute(expand('%:p'), '\\', '/', 'g')
         " let wd = substitute(expand('%:p:h'), '\\', '/', 'g')
@@ -135,22 +152,29 @@ function! s:prototype.InitBufferFiletype() abort dict "{{{3
     "     nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
     " endif
     exec 'nnoremap <buffer>' g:workbook#map_leader .'k :call workbook#Send(''workbookKeyword(<c-r><c-w>, "<c-r><c-w>")'')<cr>'
-    exec 'nnoremap <buffer>' g:workbook#map_leader .'f :echo "<c-r><c-w>" workbook#Eval(''args("<c-r><c-w>")'')<cr>'
+    if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
+        nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
+    endif
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'f :echo "<c-r><c-w>" workbook#Send(''str(<c-r><c-w>)'')<cr>'
     exec 'nnoremap <buffer> '. g:workbook#map_leader .'d :call workbook#ft#r#Debug(expand("<cword>"))<cr>'
-    exec 'vnoremap <buffer> '. g:workbook#map_leader .'d ""p:call workbook#ft#r#Debug(@")<cr>'
+    exec 'xnoremap <buffer> '. g:workbook#map_leader .'d ""p:call workbook#ft#r#Debug(@")<cr>'
 endf
 
 
 function! s:prototype.UndoFiletype() abort dict "{{{3
+    Tlibtrace 'workbook', 'UndoFiletype'
     exec 'nunmap <buffer>' g:workbook#map_leader .'cd'
     exec 'nunmap <buffer>' g:workbook#map_leader .'s'
     exec 'nunmap <buffer>' g:workbook#map_leader .'f'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'q'
-    exec 'vunmap <buffer>' g:workbook#map_leader .'q'
+    " exec 'nunmap <buffer>' g:workbook#map_leader .'q'
+    " exec 'xunmap <buffer>' g:workbook#map_leader .'q'
     exec 'nunmap <buffer>' g:workbook#map_leader .'d'
-    exec 'vunmap <buffer>' g:workbook#map_leader .'d'
+    exec 'xunmap <buffer>' g:workbook#map_leader .'d'
     " nunmap <buffer> K
     exec 'nunmap <buffer>' g:workbook#map_leader .'k'
+    if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
+        nunmap <buffer> K
+    endif
 endf
 
 
@@ -170,15 +194,17 @@ endf
 
 function! s:prototype.ProcessMessage(msg) abort dict "{{{3
     Tlibtrace 'workbook', 'ProcessMessage', a:msg
-    let rx = printf("\\V\\%(\\^\\|\n\\)\\(\\[>+]\\s\\*\\)\\?". escape(s:wrap_code_f, '\') ."\\%(\\$\\|\n\\)", '\_.\{-}', '---- \S\+ ----')
-    Tlibtrace 'workbook', 'ProcessMessage', rx
-    let msg = substitute(a:msg, rx, '\n', 'g')
+    " let rx = printf("\\V\\%(\\^\\|\n\\)\\(\\[>+]\\s\\*\\)\\?". escape(s:wrap_code_f, '\') ."\\%(\\$\\|\n\\)", '\_.\{-}', '---- \S\+ ----')
+    " Tlibtrace 'workbook', 'ProcessMessage', rx
+    " let msg = substitute(a:msg, rx, '\n', 'g')
+    let msg = substitute(a:msg, '^\%([>+]\_s\+\)\+', '', 'g')
     Tlibtrace 'workbook', 'ProcessMessage', msg
     return msg
 endf
 
 
 function! s:prototype.ProcessLine(line) abort dict "{{{3
+    Tlibtrace 'workbook', 'ProcessLine', a:line
     "" Doesn't work because it will be called recursively
     if a:line =~# '^Browse\[\d\+\]>'
         echohl WarningMsg
@@ -195,14 +221,23 @@ endf
 
 if !empty(g:workbook#ft#r#wait_after_send_line)
     function! s:prototype.ProcessSendLine(Sender) abort dict "{{{3
-        call a:Sender()
+        Tlibtrace 'workbook', 'ProcessSendLine', a:Sender
+        let rv = a:Sender()
+        Tlibtrace 'workbook', 'ProcessSendLine', g:workbook#ft#r#wait_after_send_line
         exec 'sleep' g:workbook#ft#r#wait_after_send_line
+        Tlibtrace 'workbook', 'ProcessSendLine', rv
+        return rv
     endf
 endif
 
 
 function! s:prototype.GetCommentLineRxf() abort dict "{{{3
-    return g:workbook#ft#r#comment_rxf
+    return '#%s'
+endf
+
+
+function! s:prototype.GetResultLinef() abort dict "{{{3
+    return '#%s'
 endf
 
 
@@ -218,13 +253,22 @@ endf
 
 
 function! s:prototype.WrapCode(placeholder, code) abort dict "{{{3
+    Tlibtrace 'workbook', 'WrapCode', a:placeholder, a:code
     if g:workbook#ft#r#mode ==# 'rserve'
         let code = printf('workbookRserveEval(with(withVisible({%s}), if (visible) {print(value); value}))', a:code)
     else
         let code = a:code
     endif
-    let wcode = printf(s:wrap_code_f, code, self.GetEndMark(a:placeholder))
+    " let wcode = printf(s:wrap_code_f, code, self.GetMark(a:placeholder))
+    let mark = self.GetMark(a:placeholder)
+    let wcode = s:WrapCode(mark, code)
     return wcode
+endf
+
+
+function! s:prototype.Reset() abort dict "{{{3
+    " call self.Input(")]}\<cr>")
+    call self.Input("\<c-c>", 1)
 endf
 
 

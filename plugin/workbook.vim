@@ -1,8 +1,8 @@
 " @Author:      Tom Link (micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-14
-" @Revision:    12
+" @Last Change: 2017-03-01
+" @Revision:    22
 " GetLatestVimScripts: 5527 0 :AutoInstall: workbook.vim
 
 if &cp || exists("loaded_workbook")
@@ -19,7 +19,23 @@ if !exists('g:workbook_autosetup_filetypes')
 endif
 
 
-command! -nargs=* -bang -complete=customlist,workbook#Complete Workbook call workbook#GetRepl([<f-args>], !empty("<bang>"))
+" :display: :Workbook [--filetype=FILETYPE] [--cmd=CMD] [--args=ARGS] [-- OTHER]
+" If no FILETYPE is specified 'filetype' is used.
+" CMD and ARGS can be used to override the default parameters for the 
+" gived filetype.
+" OTHER arguments are added to CMD ARGS when starting the inferior 
+" process.
+"
+" Additional filetype-specific arguments:
+" r:
+"   --[no-]save ...... Save an image (default: --no-save)
+"   --[no-]restore ... Restore an image (default: --restore)
+command! -nargs=* -bang -bar -complete=customlist,workbook#Complete Workbook call workbook#GetRepl([<f-args>], !empty("<bang>"))
+
+
+" Select a repl from a list of inferior processes. The list also 
+" included their status.
+command! -bar Workbooks call workbook#Overview()
 
 
 augroup Workbook
