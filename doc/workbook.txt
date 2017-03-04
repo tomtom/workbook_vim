@@ -24,8 +24,12 @@ How to use this plugin~
 
 The following filetypes are supported~
 - R (supports code completion)
-- vim
+
+Plus experimental/basic support for:
+- fsharp
+- scala
 - sh (default: bash)
+- vim
 
 Currenty, the main use case is to interact with R. Other than other 
 well-known R-related vim plugins, the workbook plugin has no non-vim 
@@ -75,7 +79,6 @@ Contents~
         :Workbookreset ........................ |:Workbookreset|
         workbook#ResetRepl .................... |workbook#ResetRepl()|
         workbook#GetSupportedFiletypes ........ |workbook#GetSupportedFiletypes()|
-        g:workbook#ft#fsharp#args ............. |g:workbook#ft#fsharp#args|
         g:workbook#ft#r#args .................. |g:workbook#ft#r#args|
         g:workbook#ft#r#highlight_debug ....... |g:workbook#ft#r#highlight_debug|
         g:workbook#ft#r#mode .................. |g:workbook#ft#r#mode|
@@ -177,13 +180,6 @@ workbook#ResetRepl()
                                                     *workbook#GetSupportedFiletypes()*
 workbook#GetSupportedFiletypes()
     Return a list of supported filetypes.
-
-
-------------------------------------------------------------------------
-                                                    *autoload/workbook/ft/fsharp.vim*
-                                                    *g:workbook#ft#fsharp#args*
-g:workbook#ft#fsharp#args      (default: '--nologo -g --tailcalls+ --warn:5 --checked --readline-')
-    let g:workbook#ft#fsharp#args = '--slave --no-save'   "
 
 
 ------------------------------------------------------------------------

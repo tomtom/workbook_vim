@@ -24,8 +24,12 @@ How to use this plugin~
 
 The following filetypes are supported~
 - R (supports code completion)
-- vim
+
+Plus experimental/basic support for:
+- fsharp
+- scala
 - sh (default: bash)
+- vim
 
 Currenty, the main use case is to interact with R. Other than other 
 well-known R-related vim plugins, the workbook plugin has no non-vim 
