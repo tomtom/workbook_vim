@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-26
-" @Revision:    482
+" @Last Change: 2017-03-04
+" @Revision:    499
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -22,7 +22,6 @@ endif
 
 
 if !exists('g:workbook#ft#fsharp#args')
-    " let g:workbook#ft#fsharp#args = '--slave --no-save'   "{{{2
     let g:workbook#ft#fsharp#args = '--nologo -g --tailcalls+ --warn:5 --checked --readline-'   "{{{2
 endif
 
@@ -40,7 +39,7 @@ endif
 if !exists('g:workbook#ft#fsharp#quicklist')
     let g:workbook#ft#fsharp#quicklist = []   "{{{2
     if exists('g:workbook#ft#r_quicklist_etc')
-        let g:workbook#ft#fsharp#quicklist += g:workbook#ft#r_quicklist_etc
+        let g:workbook#ft#fsharp#quicklist += g:workbook#ft#fsharp#quicklist_etc
     endif
 endif
 
@@ -56,7 +55,7 @@ endif
 
 
 " let s:WrapCode = {p, c -> printf("printfn \"WorkbookBEGIN:%%s\\n\" \"%s\";;\n\n%s;;\n\nprintfn \"WorkbookEND:%%s\\n\" \"%s\";;\n", p, c, p)}
-let s:WrapCode = {p, c -> printf("(let result = (%s)\nprintfn \"WorkbookBEGIN:%%s\\n%%O\nWorkbookEND:%%s\\n\" \"%s\" result \"%s\"; result);;\n", substitute(c, ';;', '', 'g'), p, p)}
+let s:WrapCode = {p, c -> printf("printfn \"WorkbookBEGIN:%s\\n\";\n%s\nprintfn \"%%O\\nWorkbookEND:%s\\n\" it;;\n", p, c, p)}
 
 let s:prototype = {'debugged': {}
             \ , 'quicklist': g:workbook#ft#fsharp#quicklist
