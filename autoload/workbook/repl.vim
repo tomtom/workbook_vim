@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-02
-" @Revision:    470
+" @Last Change: 2017-03-05
+" @Revision:    472
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -107,7 +107,8 @@ function! s:prototype.Send(code, ...) abort dict "{{{3
     if self.IsReady()
         Tlibtrace 'workbook', 'Send', len(a:code)
         let placeholder = a:0 >= 1 ? a:1 : ''
-        let code = self.DoInsertResultsInBuffer() && !empty(placeholder) && has_key(self, 'WrapCode') ? self.WrapCode(placeholder, a:code) : a:code
+        let wrapcode = a:0 >= 2 ? a:2 : self.DoInsertResultsInBuffer()
+        let code = wrapcode && !empty(placeholder) && has_key(self, 'WrapCode') ? self.WrapCode(placeholder, a:code) : a:code
         Tlibtrace 'workbook', 'Send', code
         call self.SendToRepl(code, 1, placeholder)
     endif
@@ -122,7 +123,7 @@ function! s:prototype.Eval(code) abort dict "{{{3
             let self.next_process_output = function(self.ProcessEval)
             let p = self.GetPlaceholder('eval')
             call self.SetPlaceholder(0, p, '')
-            call self.Send(a:code, p)
+            call self.Send(a:code, p, 1)
             let i = 0
             let d = 200
             while !has_key(self, 'eval_result') && i < 2000
