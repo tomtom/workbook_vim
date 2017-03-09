@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-04
-" @Revision:    499
+" @Last Change: 2017-03-05
+" @Revision:    503
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -55,7 +55,7 @@ endif
 
 
 " let s:WrapCode = {p, c -> printf("printfn \"WorkbookBEGIN:%%s\\n\" \"%s\";;\n\n%s;;\n\nprintfn \"WorkbookEND:%%s\\n\" \"%s\";;\n", p, c, p)}
-let s:WrapCode = {p, c -> printf("printfn \"WorkbookBEGIN:%s\\n\";\n%s\nprintfn \"%%O\\nWorkbookEND:%s\\n\" it;;\n", p, c, p)}
+let s:WrapCode = {p, c -> printf("printfn \"WorkbookBEGIN:%s\\n\";\n%s\nprintfn \"WorkbookEND:%s\\n\";;\n", p, c, p)}
 
 let s:prototype = {'debugged': {}
             \ , 'quicklist': g:workbook#ft#fsharp#quicklist
@@ -122,16 +122,23 @@ endf
 
 function! s:prototype.ProcessMessage(msg) abort dict "{{{3
     Tlibtrace 'workbook', 'ProcessMessage', a:msg
-    let msg = substitute(a:msg, '\%(^\%(>\_s\+\)\+\|\%(>\_s\+\)$\+\)\+', "\n", 'g')
+    let msg = substitute(a:msg, '\%(\_^\%(>\_s\+\)\+\|\%(>\_s\+\)\_$\+\)\+', "\n", 'g')
     Tlibtrace 'workbook', 'ProcessMessage', msg
     return msg
 endf
 
 
-function! s:prototype.FilterOutputLines(lines) abort dict "{{{3
-    Tlibtrace 'workbook', 'FilterOutputLines', a:lines
+function! s:prototype.FilterMessageLines(lines) abort dict "{{{3
+    Tlibtrace 'workbook', 'FilterMessageLines', a:lines
     " let mi = len(a:lines) - 1
     " return filter(a:lines, {i, v -> i != 0 || i != mi || v !=# 'val it : unit = ()'})
-    return filter(a:lines, {i, v -> v !~# '^(\*=.\{-}\%(val it : unit = ()\|>\s*\)\+\*)$'})
+    return filter(a:lines, {i, v -> v !~# '^\%(>\s*\|val it : unit = ()\)$'})
 endf
+
+" function! s:prototype.FilterOutputLines(lines) abort dict "{{{3
+"     Tlibtrace 'workbook', 'FilterOutputLines', a:lines
+"     " let mi = len(a:lines) - 1
+"     " return filter(a:lines, {i, v -> i != 0 || i != mi || v !=# 'val it : unit = ()'})
+"     return filter(a:lines, {i, v -> v !~# '^(\*=.\{-}\%(val it : unit = ()\|>\s*\)\+\*)$'})
+" endf
 

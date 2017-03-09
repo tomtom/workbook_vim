@@ -1,8 +1,12 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-04
-" @Revision:    509
+" @Last Change: 2017-03-05
+" @Revision:    523
+
+" NOTES:
+" - command-line completion? 
+"   https://stackoverflow.com/questions/20331680/get-same-completion-candidates-for-imain-as-would-appear-in-a-repl
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -55,7 +59,7 @@ endif
 
 
 " let s:WrapCode = {p, c -> printf("printfn \"WorkbookBEGIN:%%s\\n\" \"%s\";;\n\n%s;;\n\nprintfn \"WorkbookEND:%%s\\n\" \"%s\";;\n", p, c, p)}
-let s:WrapCode = {p, c -> printf("println(\"WorkbookBEGIN:%s\");\n%s\nprintln(\"WorkbookEND:%s\");\n", p, c, p)}
+let s:WrapCode = {p, c -> printf("println(\"WorkbookBEGIN:%s\")\n%s\nprintln(\"WorkbookEND:%s\")\n", p, c, p)}
 
 let s:prototype = {'debugged': {}
             \ , 'quicklist': g:workbook#ft#scala#quicklist
@@ -135,4 +139,19 @@ endf
 "     " return filter(a:lines, {i, v -> i != 0 || i != mi || v !=# 'val it : unit = ()'})
 "     return filter(a:lines, {i, v -> v !~# '^(\*=.\{-}\%(val it : unit = ()\|>\s*\)\+\*)$'})
 " endf
+
+
+function! s:prototype.Complete(text) abort dict "{{{3
+    Tlibtrace 'workbook', a:text, getpos('.'), col('.')
+    let lines = getline(line('.'), line('.'))
+    let lines[-1] .= a:text
+    let lines = map(lines, {i, v -> escape(v, '"\')})
+    let text = join(lines, '\n')
+    Tlibtrace 'workbook', text
+    let cmd = printf('workbookComplete("%s")', text)
+    let cs = self.Eval(cmd)
+    Tlibtrace 'workbook', cs
+    return split(cs, "\n")
+endf
+
 
