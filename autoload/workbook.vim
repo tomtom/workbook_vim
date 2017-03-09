@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-02
-" @Revision:    750
+" @Last Change: 2017-03-05
+" @Revision:    755
 
 
 if v:version < 800
@@ -456,10 +456,13 @@ function! workbook#OmniComplete(findstart, base) abort "{{{3
             return start
         else
             let values = repl.Complete(a:base)
-            if empty(values) && exists('b:workbook_orig_omnifunc') && !empty(b:workbook_orig_omnifunc)
-                let values = call(b:workbook_orig_omnifunc, [a:findstart, a:base])
+            " if empty(values) && exists('b:workbook_orig_omnifunc') && !empty(b:workbook_orig_omnifunc)
+            "     let values = call(b:workbook_orig_omnifunc, [a:findstart, a:base])
+            " endif
+            if !empty(b:workbook_orig_omnifunc) && exists('*'. b:workbook_orig_omnifunc)
+                let values += call(b:workbook_orig_omnifunc, [a:findstart, a:base])
             endif
-            return values
+            return tlib#list#Uniq(values)
         endif
     endif
 endf
