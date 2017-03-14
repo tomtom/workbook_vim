@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-02
-" @Revision:    453
+" @Last Change: 2017-03-13
+" @Revision:    489
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -37,10 +37,16 @@ if !exists('g:workbook#ft#r#init_code')
 endif
 
 
-" if !exists('g:workbook#ft#r#help_type')
-"     " Other help types may not work.
-"     let g:workbook#ft#r#help_type = ''   "{{{2
-" endif
+if !exists('g:workbook#ft#r#save')
+    " If true, save R sessions by default.
+    let g:workbook#ft#r#save = 1   "{{{2
+endif
+
+
+if !exists('g:workbook#ft#r#restore')
+    " If true, restore R sessions by default.
+    let g:workbook#ft#r#restore = 1   "{{{2
+endif
 
 
 if !exists('g:workbook#ft#r#quicklist')
@@ -75,15 +81,20 @@ if !exists('g:workbook#ft#r#wait_after_startup')
 endif
 
 
-" let s:wrap_code_f = "tryCatch(with(withVisible({%s\n}), if (visible) print(value)), finally = {cat(\"\\n%s\\n\"); flush.console()})"   "{{{2
-" let s:wrap_code_f = "{%s\n}; cat(\"\\n%s\\n\"); flush.console()"   "{{{2
-" let s:wrap_code_f = "%s\ncat(\"\\n%s\\n\"); flush.console()\n"   "{{{2
-let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", p, c, p)}
+if !exists('g:workbook#ft#r#handle_qfl_expression_f')
+    " An ex command as format string. Defined how the results from 
+    " codetools:checkUsage are displayed.
+    let g:workbook#ft#r#handle_qfl_expression_f = 'cgetexpr %s | cwindow'   "{{{2
+endif
 
-" function! s:WrapCode(p, c) abort "{{{3
-"     Tlibtrace 'workbook', a:p, a:c
-"     return printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", a:p, a:c, a:p)
-" endf
+
+if !exists('g:workbook#ft#r#formatR_options')
+    " Additional arguments to formatR::tidy_source().
+    let g:workbook#ft#r#formatR_options = ''   "{{{2
+endif
+
+
+let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbooBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", p, c, p)}
 
 
 let s:prototype = {'debugged': {}
@@ -101,12 +112,12 @@ endf
 
 function! s:prototype.GetFiletypeCmdAndArgs() abort dict "{{{3
     let args = g:workbook#ft#r#args
-    if get(self.args, 'save', 0)
+    if get(self.args, 'save', g:workbook#ft#r#save)
         let args .= ' --save'
     else
         let args .= ' --no-save'
     endif
-    if get(self.args, 'resore', 1)
+    if get(self.args, 'restore', g:workbook#ft#r#restore)
         let args .= ' --restore'
     else
         let args .= ' --no-restore'
@@ -120,9 +131,6 @@ function! s:prototype.InitFiletype() abort dict "{{{3
     if filereadable(g:workbook#ft#r#init_script)
         call self.Send(printf('source("%s")', substitute(g:workbook#ft#r#init_script, '\\', '/', 'g')))
     endif
-    " let p = self.GetPlaceholder('startup message')
-    " call self.SetPlaceholder(0, p, '')
-    " call self.Send(printf('options(help_type = %s)', empty(g:workbook#ft#r#help_type) ? 'NULL' : string(g:workbook#ft#r#help_type)))
     call self.Send(g:workbook#ft#r#init_code)
     " call workbook#ft#r#Cd()
     call self.Send('flush.console()')
@@ -143,34 +151,30 @@ function! s:prototype.InitBufferFiletype() abort dict "{{{3
     Tlibtrace 'workbook', 'InitBufferFiletype'
     if &buftype != 'nofile'
         let filename = substitute(expand('%:p'), '\\', '/', 'g')
-        " let wd = substitute(expand('%:p:h'), '\\', '/', 'g')
-        " let wd = substitute(getcwd(), '\\', '/', 'g')
         exec 'nnoremap <buffer>' g:workbook#map_leader .'s :call workbook#Send(''source('. string(filename) .')'')<cr>'
     endif
     exec 'nnoremap <buffer>' g:workbook#map_leader .'cd :call workbook#ft#r#Cd()<cr>'
-    " if &keywordprg =~# '^\%(:\?help$\|man\>\)'
-    "     nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
-    " endif
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'cu :call workbook#ft#r#CheckUsage()<cr>'
     exec 'nnoremap <buffer>' g:workbook#map_leader .'k :call workbook#Send(''workbookKeyword(<c-r><c-w>, "<c-r><c-w>")'')<cr>'
     if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
         nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
     endif
     exec 'nnoremap <buffer>' g:workbook#map_leader .'f :echo "<c-r><c-w>" workbook#Send(''str(<c-r><c-w>)'')<cr>'
-    exec 'nnoremap <buffer> '. g:workbook#map_leader .'d :call workbook#ft#r#Debug(expand("<cword>"))<cr>'
-    exec 'xnoremap <buffer> '. g:workbook#map_leader .'d ""p:call workbook#ft#r#Debug(@")<cr>'
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'F :call workbook#ft#r#FormatCurrentBuffer()<cr>'
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'d :call workbook#ft#r#Debug(expand("<cword>"))<cr>'
+    exec 'xnoremap <buffer>' g:workbook#map_leader .'d ""p:call workbook#ft#r#Debug(@")<cr>'
 endf
 
 
 function! s:prototype.UndoFiletype() abort dict "{{{3
     Tlibtrace 'workbook', 'UndoFiletype'
     exec 'nunmap <buffer>' g:workbook#map_leader .'cd'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'cu'
     exec 'nunmap <buffer>' g:workbook#map_leader .'s'
     exec 'nunmap <buffer>' g:workbook#map_leader .'f'
-    " exec 'nunmap <buffer>' g:workbook#map_leader .'q'
-    " exec 'xunmap <buffer>' g:workbook#map_leader .'q'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'F'
     exec 'nunmap <buffer>' g:workbook#map_leader .'d'
     exec 'xunmap <buffer>' g:workbook#map_leader .'d'
-    " nunmap <buffer> K
     exec 'nunmap <buffer>' g:workbook#map_leader .'k'
     if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
         nunmap <buffer> K
@@ -185,7 +189,6 @@ endf
 
 
 " function! s:prototype.PreprocessRawMessage(msg) abort dict "{{{3
-"     echom "DBG" string(a:msg)
 "     let parts = split(a:msg, '\n', 1)
 "     let parts = map(parts, {i,p -> self.PreprocessNlMessage(p)})
 "     return join(parts, "\n")
@@ -194,9 +197,6 @@ endf
 
 function! s:prototype.ProcessMessage(msg) abort dict "{{{3
     Tlibtrace 'workbook', 'ProcessMessage', a:msg
-    " let rx = printf("\\V\\%(\\^\\|\n\\)\\(\\[>+]\\s\\*\\)\\?". escape(s:wrap_code_f, '\') ."\\%(\\$\\|\n\\)", '\_.\{-}', '---- \S\+ ----')
-    " Tlibtrace 'workbook', 'ProcessMessage', rx
-    " let msg = substitute(a:msg, rx, '\n', 'g')
     let msg = substitute(a:msg, '^\%([>+]\_s\+\)\+', '', 'g')
     Tlibtrace 'workbook', 'ProcessMessage', msg
     return msg
@@ -259,7 +259,6 @@ function! s:prototype.WrapCode(placeholder, code) abort dict "{{{3
     else
         let code = a:code
     endif
-    " let wcode = printf(s:wrap_code_f, code, self.GetMark(a:placeholder))
     let mark = self.GetMark(a:placeholder)
     let wcode = s:WrapCode(mark, code)
     return wcode
@@ -365,5 +364,29 @@ endf
 
 function! workbook#ft#r#BrowserHandler(timer) abort "{{{3
     call workbook#InteractiveRepl()
+endf
+
+
+function! workbook#ft#r#CheckUsage() abort "{{{3
+    let repl = workbook#GetRepl()
+    let checks = repl.Eval('codetools::checkUsageEnv(.GlobalEnv)')
+    Tlibtrace 'workbook', checks
+    let efm = &errorformat
+    let &errorformat = '%m (%f:%l-%*[0-9]),%m (%f:%l)'
+    try
+        exec printf(g:workbook#ft#r#handle_qfl_expression_f, 'checks')
+    finally
+        let &errorformat = efm
+    endtry
+endf
+
+
+function! workbook#ft#r#FormatCurrentBuffer() abort "{{{3
+    update
+    let repl = workbook#GetRepl()
+    let filename = escape(bufname('%'), '\"')
+    let options = empty(g:workbook#ft#r#formatR_options) ? '' : (', '. g:workbook#ft#r#formatR_options)
+    let formatted = repl.Eval(printf('suppressWarnings(formatR::tidy_source(source = "%s", file = "%s"%s))', filename, filename, options))
+    edit
 endf
 
