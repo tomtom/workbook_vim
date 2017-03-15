@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-13
-" @Revision:    489
+" @Last Change: 2017-03-15
+" @Revision:    533
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -88,13 +88,63 @@ if !exists('g:workbook#ft#r#handle_qfl_expression_f')
 endif
 
 
+if !exists('g:workbook#ft#r#use_formatR')
+    " If true, format code with formatR.
+    let g:workbook#ft#r#use_formatR = 1   "{{{2
+endif
+
+
 if !exists('g:workbook#ft#r#formatR_options')
     " Additional arguments to formatR::tidy_source().
     let g:workbook#ft#r#formatR_options = ''   "{{{2
 endif
 
 
-let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbooBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", p, c, p)}
+function! workbook#ft#r#SetupBuffer() abort "{{{3
+    Tlibtrace 'workbook', 'SetupBuffer'
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'cd :call workbook#ft#r#Cd()<cr>'
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'cu :call workbook#ft#r#CheckUsage()<cr>'
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'d :call workbook#ft#r#Debug(expand("<cword>"))<cr>'
+    exec 'xnoremap <buffer>' g:workbook#map_leader .'d ""y:call workbook#ft#r#Debug(@")<cr>'
+    if g:workbook#ft#r#use_formatR
+        " let b:formatexpr_orig = &l:formatexpr
+        " setlocal formatexpr=workbook#ft#r#FormatR()
+        exec 'nmap <buffer>' g:workbook#map_leader .'f :set opfunc=workbook#ft#r#Format<CR>g@'
+        exec 'xmap <buffer>' g:workbook#map_leader .'f :<C-U>call workbook#ft#r#Format(visualmode(), 1)<CR>'
+    endif
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'i :echo "<c-r><c-w>" workbook#Send(''str(<c-r><c-w>)'')<cr>'
+    exec 'nnoremap <buffer>' g:workbook#map_leader .'k :call workbook#Send(''workbookKeyword(<c-r><c-w>, "<c-r><c-w>")'')<cr>'
+    if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
+        nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
+    endif
+    if &buftype != 'nofile'
+        let filename = substitute(expand('%:p'), '\\', '/', 'g')
+        exec 'nnoremap <buffer>' g:workbook#map_leader .'s :call workbook#Send("source('. string(filename) .')")<cr>'
+    endif
+endf
+
+
+function! workbook#ft#r#UndoSetup() abort "{{{3
+    Tlibtrace 'workbook', 'UndoSetup'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'cd'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'cu'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'d'
+    exec 'xunmap <buffer>' g:workbook#map_leader .'d'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'f'
+    exec 'xunmap <buffer>' g:workbook#map_leader .'f'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'i'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'k'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'s'
+    if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
+        nunmap <buffer> K
+    endif
+    if exists('b:formatexpr_orig')
+        let &l:formatexpr = b:formatexpr_orig
+    endif
+endf
+
+
+let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", p, c, p)}
 
 
 let s:prototype = {'debugged': {}
@@ -144,41 +194,6 @@ function! s:prototype.ExitFiletype(args) abort dict "{{{3
     let cmd = printf('q(%s)', qargs)
     Tlibtrace 'workbook', 'ExitFiletype', cmd
     call self.Send(cmd)
-endf
-
-
-function! s:prototype.InitBufferFiletype() abort dict "{{{3
-    Tlibtrace 'workbook', 'InitBufferFiletype'
-    if &buftype != 'nofile'
-        let filename = substitute(expand('%:p'), '\\', '/', 'g')
-        exec 'nnoremap <buffer>' g:workbook#map_leader .'s :call workbook#Send(''source('. string(filename) .')'')<cr>'
-    endif
-    exec 'nnoremap <buffer>' g:workbook#map_leader .'cd :call workbook#ft#r#Cd()<cr>'
-    exec 'nnoremap <buffer>' g:workbook#map_leader .'cu :call workbook#ft#r#CheckUsage()<cr>'
-    exec 'nnoremap <buffer>' g:workbook#map_leader .'k :call workbook#Send(''workbookKeyword(<c-r><c-w>, "<c-r><c-w>")'')<cr>'
-    if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
-        nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
-    endif
-    exec 'nnoremap <buffer>' g:workbook#map_leader .'f :echo "<c-r><c-w>" workbook#Send(''str(<c-r><c-w>)'')<cr>'
-    exec 'nnoremap <buffer>' g:workbook#map_leader .'F :call workbook#ft#r#FormatCurrentBuffer()<cr>'
-    exec 'nnoremap <buffer>' g:workbook#map_leader .'d :call workbook#ft#r#Debug(expand("<cword>"))<cr>'
-    exec 'xnoremap <buffer>' g:workbook#map_leader .'d ""p:call workbook#ft#r#Debug(@")<cr>'
-endf
-
-
-function! s:prototype.UndoFiletype() abort dict "{{{3
-    Tlibtrace 'workbook', 'UndoFiletype'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'cd'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'cu'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'s'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'f'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'F'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'d'
-    exec 'xunmap <buffer>' g:workbook#map_leader .'d'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'k'
-    if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
-        nunmap <buffer> K
-    endif
 endf
 
 
@@ -381,12 +396,42 @@ function! workbook#ft#r#CheckUsage() abort "{{{3
 endf
 
 
-function! workbook#ft#r#FormatCurrentBuffer() abort "{{{3
-    update
+function! workbook#ft#r#Format(type, ...) abort "{{{3
+    let sel_save = &selection
+    let &selection = "inclusive"
+    let reg_save = @@
+    try
+        if a:0  " Invoked from Visual mode, use gv command.
+            let lbeg = line("'<")
+            let lend = line("'>")
+        else
+            let lbeg = line("'[")
+            let lend = line("']")
+        endif
+        let cnt = lend - lbeg
+        call workbook#ft#r#FormatR(lbeg, cnt + 1)
+    finally
+        let &selection = sel_save
+        let @@ = reg_save
+    endtry
+endf
+
+
+function! workbook#ft#r#FormatR(lnum, count) abort "{{{3
     let repl = workbook#GetRepl()
-    let filename = escape(bufname('%'), '\"')
+    let lend = a:lnum + a:count - 1
+    let lines = getline(a:lnum, lend)
+    let lines = map(lines, {i, v -> '"'. escape(v, '"\') .'"'})
+    let code = join(lines, ', ')
     let options = empty(g:workbook#ft#r#formatR_options) ? '' : (', '. g:workbook#ft#r#formatR_options)
-    let formatted = repl.Eval(printf('suppressWarnings(formatR::tidy_source(source = "%s", file = "%s"%s))', filename, filename, options))
-    edit
+    let cmd = printf('suppressWarnings(formatR::tidy_source(text = c(%s)%s))', code, options)
+    let formatted = repl.Eval(cmd)
+    if a:count > 1
+        exec a:lnum .','. lend 'delete'
+    else
+        exec a:lnum 'delete'
+    endif
+    call append(a:lnum - 1, split(formatted, '\n'))
+    return 0
 endf
 

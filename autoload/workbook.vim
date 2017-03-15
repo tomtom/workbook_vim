@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-05
-" @Revision:    755
+" @Last Change: 2017-03-15
+" @Revision:    809
 
 
 if v:version < 800
@@ -183,11 +183,11 @@ function! workbook#SetupBuffer(...) abort "{{{3
         command -buffer Workbookhelp call workbook#Help()
         " Reset a REPL's state.
         command -buffer Workbookreset call workbook#Reset()
-        exec 'nmap <buffer>' g:workbook#map_evalblock g:workbook#map_op .'<Plug>WorkbookBlock'
-        exec 'nmap <buffer>' g:workbook#map_evalinsertblock ':let b:workbook_insert_results_in_buffer_once = 1<cr>'. g:workbook#map_op .'<Plug>WorkbookBlock'
+        exec 'nmap <expr> <buffer>' g:workbook#map_evalblock 'workbook#EvalBlockExpr("")'
+        exec 'nmap <expr> <buffer>' g:workbook#map_evalinsertblock 'workbook#EvalBlockExpr(":let b:workbook_insert_results_in_buffer_once = 1\<cr>")'
         exec 'nnoremap <buffer>' g:workbook#map_evalline ':call workbook#Print(line("."), line("."))<cr>j$'
         exec 'nnoremap <buffer>' g:workbook#map_op ':set opfunc=workbook#Op<cr>g@'
-        exec 'xnoremap <buffer>' g:workbook#map_op 'y:<c-u>call workbook#Op(visualmode())<cr>'
+        exec 'xnoremap <buffer>' g:workbook#map_op 'y:<c-u>call workbook#Op(visualmode(), 1)<cr>'
         exec 'xmap <buffer>' g:workbook#map_evalblock g:workbook#map_op
         exec 'nnoremap <buffer>' g:workbook#map_leader .'r :call workbook#InteractiveRepl()<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'z :call workbook#ResetRepl()<cr>'
@@ -199,23 +199,73 @@ function! workbook#SetupBuffer(...) abort "{{{3
             let b:workbook_orig_omnifunc = &omnifunc
             setl omnifunc=workbook#OmniComplete
         endif
+        " try
+            call workbook#ft#{&filetype}#SetupBuffer()
+		" catch /^Vim\%((\a\+)\)\=:E117/
+        " endtry
     endif
 endf
 
 
-function! workbook#WorkbookBlockExpr() abort "{{{3
-    let repl = workbook#GetRepl()
-    let line = getline('.')
-    if line =~ '\S' && synIDattr(synIDtrans(synID(line("."), col("."), 1)), "name") !=# 'Comment'
-        let rhs = has_key(repl, 'GetBlockKeys') ? repl.GetBlockKeys() : 'ip}'
+function! workbook#EvalBlockExpr(prefix) abort "{{{3
+    let repl = a:0 >= 1 ? a:1 : workbook#GetRepl()
+    let gbeg = s:GotoBeginOfBlockExpr(repl)
+    let gnext = s:GotoNextBlockExpr()
+    if empty(gbeg)
+        return gnext
     else
-        let repl.ignore_input = 1
-        let rhs = '$'. (has_key(repl, 'GetNextKeys') ? repl.GetNextKeys() : 'j') .'^'
+        let gend = s:GotoEndOfBlockExpr(repl)
+        if gend ==# gnext
+            return gnext
+        else
+            let expr = g:workbook#map_op
+            let ml = exists('g:mapleader') ? g:mapleader : '\'
+            let expr = substitute(expr, '\c<leader>', escape(ml, '\'), 'g')
+            if exists('g:maplocalleader')
+                let expr = substitute(expr, '\c<localleader>', escape(g:maplocalleader, '\'), 'g')
+            endif
+            if !empty(a:prefix)
+                let expr = a:prefix . expr
+            endif
+            let expr .= gend
+            Tlibtrace 'workbook', expr
+            return expr
+        endif
     endif
+endf
+
+
+function! s:GotoBeginOfBlockExpr(...) abort "{{{3
+    let repl = a:0 >= 1 ? a:1 : workbook#GetRepl()
+    let line = getline('.')
+    let rhs = has_key(repl, 'GotoBeginOfBlockExpr') ? repl.GotoBeginOfBlockExpr(0) : '^'
+    Tlibtrace 'workbook', rhs
     return rhs
 endf
 
-omap <expr> <Plug>WorkbookBlock workbook#WorkbookBlockExpr()
+
+function! s:GotoEndOfBlockExpr(...) abort "{{{3
+    let repl = a:0 >= 1 ? a:1 : workbook#GetRepl()
+    let default = a:0 >= 1 ? a:1 : 'ip}'
+    let line = getline('.')
+    if line =~ '\S'
+        " && synIDattr(synIDtrans(synID(line("."), col("."), 1)), "name") !=# 'Comment'
+        let rhs = has_key(repl, 'GotoEndOfBlockExpr') ? repl.GotoEndOfBlockExpr(0) : 'ip}'
+    else
+        let rhs = s:GotoNextBlockExpr(repl)
+    endif
+    Tlibtrace 'workbook', rhs
+    return rhs
+endf
+
+
+function! s:GotoNextBlockExpr(...) abort "{{{3
+    let repl = a:0 >= 1 ? a:1 : workbook#GetRepl()
+    " let repl.ignore_input = 1
+    let rhs = has_key(repl, 'GotoNextBlockExpr') ? repl.GotoNextBlockExpr() : 'j^'
+    Tlibtrace 'workbook', rhs
+    return rhs
+endf
 
 
 function! workbook#UndoSetup() abort "{{{3
@@ -245,6 +295,10 @@ function! workbook#UndoSetup() abort "{{{3
     let &l:omnifunc = b:workbook_orig_omnifunc
     unlet! b:workbook_orig_omnifunc
     unlet! b:workbook_setup_done
+    try
+        call workbook#ft#{&filetype}#UndoSetup()
+    catch /^Vim\%((\a\+)\)\=:E117/
+    endtry
 endf
 
 
@@ -279,35 +333,44 @@ endf
 
 
 function! workbook#Op(type, ...) abort "{{{3
+    Tlibtrace 'workbook', a:type, a:000
     call assert_true(type(a:type) == v:t_string)
     let sel_save = &selection
-    let &selection = "inclusive"
+    let &selection = 'inclusive'
+    let reg_save = @@
     try
-        let l1 = line("'[")
-        let l2 = line("']")
-        Tlibtrace 'workbook', l1, l2, a:type
-        if a:type ==# 'line'
-            call workbook#Print(l1, l2)
+        if a:0  " Invoked from Visual mode, use gv command.
+            silent exec "normal! gvy"
         else
-            if index(['v', 'V', "\<c-v>"], a:type) == -1
-                if a:type ==# 'block'
-                    silent exe "normal! `[\<C-V>`]y"
-                    " elseif a:type ==# 'char'
-                    "     silent exe "normal! `[v`]y"
-                " elseif a:type ==# "\<C-V>"
-                " elseif a:type ==# 'v'
-                    " silent exe "normal! y"
-                else
-                    silent exe "normal! `[v`]y"
-                endif
+            let l1 = line("'[")
+            let l2 = line("']")
+            Tlibtrace 'workbook', l1, l2, a:type, col("`["), col("`]")
+            if a:type ==# 'line'
+                call workbook#Print(l1, l2)
+                return
+            else
+                silent exec "normal! `[v`]y"
+                " if index(['v', 'V', "\<c-v>"], a:type) == -1
+                "     if a:type ==# 'block'
+                "         silent exec "normal! `[\<C-V>`]y"
+                "         " elseif a:type ==# 'char'
+                "         "     silent exec "normal! `[v`]y"
+                "         " elseif a:type ==# "\<C-V>"
+                "         " elseif a:type ==# 'v'
+                "         " silent exec "normal! y"
+                "     else
+                "         silent exec "normal! `[v`]y"
+                "     endif
+                " endif
             endif
-            let lines = split(@", "\n")
-            Tlibtrace 'workbook', a:type, lines
+            let lines = split(@@, "\n")
+            Tlibtrace 'workbook', a:type, @@, lines
             call workbook#Print(l1, l2, lines)
         endif
         " norm! `<
     finally
         let &selection = sel_save
+        let @@ = reg_save
     endtry
 endf
 
@@ -377,7 +440,7 @@ function! workbook#Print(line1, line2, ...) abort "{{{3
     Tlibtrace 'workbook', placeholder
     let pos = getpos('.')
     try
-        if repl.DoInsertResultsInBuffer()
+        if repl.DoInsertResultsInBuffer(0)
             let pline = indent . repl.GetResultLine('p', placeholder)
             call append(line2, [pline])
         else

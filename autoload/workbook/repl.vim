@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-05
-" @Revision:    472
+" @Last Change: 2017-03-15
+" @Revision:    490
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -79,11 +79,13 @@ function! s:prototype.DoTranscribe() abort dict "{{{3
 endf
 
 
-function! s:prototype.DoInsertResultsInBuffer() abort dict "{{{3
+function! s:prototype.DoInsertResultsInBuffer(insert_now) abort dict "{{{3
     Tlibtrace 'workbook', 'DoInsertResultsInBuffer', self.do_insert_results_in_buffer
     if exists('b:workbook_insert_results_in_buffer_once') && self.do_insert_results_in_buffer != 0
         let do_insert_results_in_buffer = b:workbook_insert_results_in_buffer_once
-        unlet! b:workbook_insert_results_in_buffer
+        if a:insert_now
+            unlet! b:workbook_insert_results_in_buffer_once
+        endif
     elseif exists('b:workbook_log_buffer') || self.do_insert_results_in_buffer < 0
         let do_insert_results_in_buffer = 0
     elseif exists('b:workbook_insert_results_in_buffer')
@@ -107,7 +109,7 @@ function! s:prototype.Send(code, ...) abort dict "{{{3
     if self.IsReady()
         Tlibtrace 'workbook', 'Send', len(a:code)
         let placeholder = a:0 >= 1 ? a:1 : ''
-        let wrapcode = a:0 >= 2 ? a:2 : self.DoInsertResultsInBuffer()
+        let wrapcode = a:0 >= 2 ? a:2 : self.DoInsertResultsInBuffer(1)
         let code = wrapcode && !empty(placeholder) && has_key(self, 'WrapCode') ? self.WrapCode(placeholder, a:code) : a:code
         Tlibtrace 'workbook', 'Send', code
         call self.SendToRepl(code, 1, placeholder)
@@ -250,18 +252,20 @@ function! s:prototype.ConsumeOutput(type, msg, ...) abort dict "{{{3
     if has_key(self, 'ProcessLine')
         let parts = map(parts, {i, val -> self.ProcessLine(val)})
     endif
+    let use_begin_mark = has_key(self, 'GetPlaceholderFromBeginMark')
+    let use_end_mark = has_key(self, 'GetPlaceholderFromEndMark')
     for part in parts
         Tlibtrace 'workbook', 'ConsumeOutput', part
-        if empty(placeholder0)
-            if has_key(self, 'GetPlaceholderFromBeginMark')
-                let placeholder = self.GetPlaceholderFromBeginMark(part)
-                if !empty(placeholder)
-                    Tlibtrace 'workbook', 'ConsumeOutput', 'BEGIN', placeholder
-                    call self.FlushOutput()
-                    continue
-                endif
+        if use_begin_mark
+            let placeholder = self.GetPlaceholderFromBeginMark(part)
+            if !empty(placeholder)
+                Tlibtrace 'workbook', 'ConsumeOutput', 'BEGIN', placeholder
+                call self.FlushOutput()
+                continue
             endif
-            if has_key(self, 'GetPlaceholderFromEndMark')
+        endif
+        if empty(placeholder0)
+            if use_end_mark
                 let placeholder = self.GetPlaceholderFromEndMark(part)
                 if !empty(placeholder)
                     Tlibtrace 'workbook', 'ConsumeOutput', 'END', placeholder
@@ -393,7 +397,7 @@ function! s:prototype.TranscribeNow(timer) abort dict "{{{3
     let bufnr = bufnr('%')
     let tid = self.GetTranscriptId()
     try
-        if bufnr(tid) == -1 || (!self.DoInsertResultsInBuffer() && bufwinnr(tid) == -1)
+        if bufnr(tid) == -1 || (!self.DoInsertResultsInBuffer(0) && bufwinnr(tid) == -1)
             if !exists('b:workbook_log_buffer')
                 let ft = self.filetype
                 exec g:workbook#repl#transript_new_cmd fnameescape(tid)
@@ -483,7 +487,6 @@ function! s:prototype.ProcessOutput(...) abort dict "{{{3
             let pline = pdef.pline
             let bufnr = bufnr('%')
             let pos = getpos('.')
-            " echom "DBG" string(pos)
             Tlibtrace 'workbook', 'ProcessOutput', bufnr, pos, pline
             try
                 if empty(pline)
@@ -525,7 +528,6 @@ function! s:prototype.ProcessOutput(...) abort dict "{{{3
                 call setpos('.', pos)
                 Tlibtrace 'workbook', 'ProcessOutput', pos, getpos('.')
             endtry
-            " echom "DBG" string(pos)
         endif
     endif
 endf
