@@ -62,28 +62,33 @@ https://github.com/tomtom/tlib_vim.
 ========================================================================
 Contents~
 
-        :Workbook ............................. |:Workbook|
-        :Workbooks ............................ |:Workbooks|
-        g:workbook#map_op ..................... |g:workbook#map_op|
-        g:workbook#map_leader ................. |g:workbook#map_leader|
-        g:workbook#map_evalline ............... |g:workbook#map_evalline|
-        g:workbook#map_evalblock .............. |g:workbook#map_evalblock|
-        g:workbook#map_evalinsertblock ........ |g:workbook#map_evalinsertblock|
-        g:workbook#transcript ................. |g:workbook#transcript|
-        g:workbook#insert_results_in_buffer ... |g:workbook#insert_results_in_buffer|
-        :Workbooksend ......................... |:Workbooksend|
-        :Workbookeval ......................... |:Workbookeval|
-        :Workbookrepl ......................... |:Workbookrepl|
-        :Workbookclear ........................ |:Workbookclear|
-        :Workbookhelp ......................... |:Workbookhelp|
-        :Workbookreset ........................ |:Workbookreset|
-        workbook#ResetRepl .................... |workbook#ResetRepl()|
-        workbook#GetSupportedFiletypes ........ |workbook#GetSupportedFiletypes()|
-        g:workbook#ft#r#args .................. |g:workbook#ft#r#args|
-        g:workbook#ft#r#highlight_debug ....... |g:workbook#ft#r#highlight_debug|
-        g:workbook#ft#r#mode .................. |g:workbook#ft#r#mode|
-        workbook#ft#r#Debug ................... |workbook#ft#r#Debug()|
-        workbook#ft#r#Undebug ................. |workbook#ft#r#Undebug()|
+        :Workbook ................................. |:Workbook|
+        :Workbooks ................................ |:Workbooks|
+        g:workbook#map_op ......................... |g:workbook#map_op|
+        g:workbook#map_leader ..................... |g:workbook#map_leader|
+        g:workbook#map_evalline ................... |g:workbook#map_evalline|
+        g:workbook#map_evalblock .................. |g:workbook#map_evalblock|
+        g:workbook#map_evalinsertblock ............ |g:workbook#map_evalinsertblock|
+        g:workbook#transcript ..................... |g:workbook#transcript|
+        g:workbook#insert_results_in_buffer ....... |g:workbook#insert_results_in_buffer|
+        :Workbooksend ............................. |:Workbooksend|
+        :Workbookeval ............................. |:Workbookeval|
+        :Workbookrepl ............................. |:Workbookrepl|
+        :Workbookclear ............................ |:Workbookclear|
+        :Workbookhelp ............................. |:Workbookhelp|
+        :Workbookreset ............................ |:Workbookreset|
+        workbook#ResetRepl ........................ |workbook#ResetRepl()|
+        workbook#GetSupportedFiletypes ............ |workbook#GetSupportedFiletypes()|
+        g:workbook#ft#r#args ...................... |g:workbook#ft#r#args|
+        g:workbook#ft#r#save ...................... |g:workbook#ft#r#save|
+        g:workbook#ft#r#restore ................... |g:workbook#ft#r#restore|
+        g:workbook#ft#r#highlight_debug ........... |g:workbook#ft#r#highlight_debug|
+        g:workbook#ft#r#mode ...................... |g:workbook#ft#r#mode|
+        g:workbook#ft#r#handle_qfl_expression_f ... |g:workbook#ft#r#handle_qfl_expression_f|
+        g:workbook#ft#r#use_formatR ............... |g:workbook#ft#r#use_formatR|
+        g:workbook#ft#r#formatR_options ........... |g:workbook#ft#r#formatR_options|
+        workbook#ft#r#Debug ....................... |workbook#ft#r#Debug()|
+        workbook#ft#r#Undebug ..................... |workbook#ft#r#Undebug()|
         prototype.Input
         prototype.Send
         prototype.Eval
@@ -188,6 +193,14 @@ workbook#GetSupportedFiletypes()
 g:workbook#ft#r#args           (default: '--silent '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive'))
     let g:workbook#ft#r#args = '--slave --no-save'   "
 
+                                                    *g:workbook#ft#r#save*
+g:workbook#ft#r#save           (default: 1)
+    If true, save R sessions by default.
+
+                                                    *g:workbook#ft#r#restore*
+g:workbook#ft#r#restore        (default: 1)
+    If true, restore R sessions by default.
+
                                                     *g:workbook#ft#r#highlight_debug*
 g:workbook#ft#r#highlight_debug (default: 'SpellRare')
     Highlight group for debugged functions.
@@ -197,6 +210,19 @@ g:workbook#ft#r#mode           (default: '')
     Defined how to talk to R. Possible values are:
     '' ......... run via |job_start()|
     'rserve' ... Use Rserve (doesn't work properly yet)
+
+                                                    *g:workbook#ft#r#handle_qfl_expression_f*
+g:workbook#ft#r#handle_qfl_expression_f (default: 'cgetexpr %s | cwindow')
+    An ex command as format string. Defined how the results from 
+    codetools:checkUsage are displayed.
+
+                                                    *g:workbook#ft#r#use_formatR*
+g:workbook#ft#r#use_formatR    (default: 1)
+    If true, format code with formatR.
+
+                                                    *g:workbook#ft#r#formatR_options*
+g:workbook#ft#r#formatR_options (default: '')
+    Additional arguments to formatR::tidy_source().
 
                                                     *workbook#ft#r#Debug()*
 workbook#ft#r#Debug(fn)
