@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-15
-" @Revision:    533
+" @Last Change: 2017-03-16
+" @Revision:    550
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -50,7 +50,7 @@ endif
 
 
 if !exists('g:workbook#ft#r#quicklist')
-    let g:workbook#ft#r#quicklist = ['??"%s"', 'str(%s)', 'summary(%s)', 'head(%s)', 'edit(%s)', 'fix(%s)', 'debugger()', 'traceback()', 'install.packages("%s")', 'update.packages()', 'example("%s")', 'graphics.off()']   "{{{2
+    let g:workbook#ft#r#quicklist = ['??"%{cword}"', 'str(%{cword})', 'summary(%{cword})', 'head(%{cword})', 'edit(%{cword})', 'fix(%{cword})', 'debugger()', 'traceback()', 'install.packages("%{cword}")', 'update.packages()', 'example("%{cword}")', 'graphics.off()']   "{{{2
     if exists('g:workbook#ft#r_quicklist_etc')
         let g:workbook#ft#r#quicklist += g:workbook#ft#r_quicklist_etc
     endif
@@ -100,6 +100,24 @@ if !exists('g:workbook#ft#r#formatR_options')
 endif
 
 
+" In R workbooks the following additional maps are set (<WML> is 
+" |g:workbook#map_leader|):
+"
+" <WML>cd ... Set the working directory in R to VIM's working directory
+" <WML>d  ... Debug the word under the cursor
+" <WML>i  ... Inspect the word under the cursor
+" <WML>k  ... Get help on the word under the cursor
+" <WML>s  ... Source the current file
+"
+" The following maps require codetools to be installed in R:
+" <WML>cu ... Run checkUsage on the global environment
+"
+" The following maps require formatR to be installed in R:
+" <WML>f{motion} ... Format some code
+" <WML>f  ... In visual mode: format some code
+" <WML>ff ... Format the current paragraph
+"
+" Omni completion (see 'omnifunc') is enabled.
 function! workbook#ft#r#SetupBuffer() abort "{{{3
     Tlibtrace 'workbook', 'SetupBuffer'
     exec 'nnoremap <buffer>' g:workbook#map_leader .'cd :call workbook#ft#r#Cd()<cr>'
@@ -110,6 +128,7 @@ function! workbook#ft#r#SetupBuffer() abort "{{{3
         " let b:formatexpr_orig = &l:formatexpr
         " setlocal formatexpr=workbook#ft#r#FormatR()
         exec 'nmap <buffer>' g:workbook#map_leader .'f :set opfunc=workbook#ft#r#Format<CR>g@'
+        exec 'nmap <buffer>' g:workbook#map_leader .'f' g:workbook#map_leader .'ip'
         exec 'xmap <buffer>' g:workbook#map_leader .'f :<C-U>call workbook#ft#r#Format(visualmode(), 1)<CR>'
     endif
     exec 'nnoremap <buffer>' g:workbook#map_leader .'i :echo "<c-r><c-w>" workbook#Send(''str(<c-r><c-w>)'')<cr>'
@@ -121,6 +140,7 @@ function! workbook#ft#r#SetupBuffer() abort "{{{3
         let filename = substitute(expand('%:p'), '\\', '/', 'g')
         exec 'nnoremap <buffer>' g:workbook#map_leader .'s :call workbook#Send("source('. string(filename) .')")<cr>'
     endif
+    call workbook#SetOmnifunc()
 endf
 
 
@@ -131,6 +151,7 @@ function! workbook#ft#r#UndoSetup() abort "{{{3
     exec 'nunmap <buffer>' g:workbook#map_leader .'d'
     exec 'xunmap <buffer>' g:workbook#map_leader .'d'
     exec 'nunmap <buffer>' g:workbook#map_leader .'f'
+    exec 'nunmap <buffer>' g:workbook#map_leader .'ff'
     exec 'xunmap <buffer>' g:workbook#map_leader .'f'
     exec 'nunmap <buffer>' g:workbook#map_leader .'i'
     exec 'nunmap <buffer>' g:workbook#map_leader .'k'
@@ -148,7 +169,6 @@ let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\n
 
 
 let s:prototype = {'debugged': {}
-            \ , 'quicklist': g:workbook#ft#r#quicklist
             \ , 'wait_after_startup': g:workbook#ft#r#wait_after_startup
             \ }
             " \ ,'repl_type': 'vim_nl'
@@ -357,8 +377,18 @@ function! s:prototype.HighlightDebug() abort dict "{{{3
 endf
 
 
+function! s:prototype.GetFilename(filename) abort dict "{{{3
+    return workbook#ft#r#GetFilename(a:filename)
+endf
+
+
+function! workbook#ft#r#GetFilename(filename) abort "{{{3
+    return substitute(a:filename, '\\', '/', 'g')
+endf
+
+
 function! workbook#ft#r#Cd() abort "{{{3
-    let wd = substitute(getcwd(), '\\', '/', 'g')
+    let wd = workbook#ft#r#GetFilename(getcwd())
     exec 'Workbooksend setwd('. string(wd) .')'
 endf
 

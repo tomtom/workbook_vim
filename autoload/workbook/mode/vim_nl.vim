@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-23
-" @Revision:    36
+" @Last Change: 2017-03-16
+" @Revision:    37
 
 
 
@@ -26,6 +26,9 @@ function! s:prototype.Start() abort dict "{{{3
                 \ })
     if has_key(self, 'wait_after_startup')
         exec 'sleep' self.wait_after_startup
+    endif
+    if job_status(self.job) ==# 'fail'
+        echoerr 'Cannot start process:' cmd
     endif
 endf
 

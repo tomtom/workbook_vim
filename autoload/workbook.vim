@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-15
-" @Revision:    809
+" @Last Change: 2017-03-16
+" @Revision:    837
 
 
 if v:version < 800
@@ -155,10 +155,7 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
     endif
     let s:buffers[bufnr] = id
     call workbook#SetupBuffer(repl)
-    if has_key(repl, 'quicklist')
-        exec 'nnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#Quicklist(expand("<cword>"))<cr>'
-        exec 'xnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#Quicklist(join(tlib#selection#GetSelection("v"), " "))<cr>'
-    endif
+    call workbook#InitQuicklist(2, repl)
     if has_key(repl, 'InitBufferFiletype')
         call repl.InitBufferFiletype()
     endif
@@ -166,6 +163,37 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
 endf
 
 
+function! workbook#InitQuicklist(mode, ...) abort "{{{3
+    let do_init = 0
+    if a:mode == 1
+        let do_init = exists('g:workbook#ft#'. &filetype .'#quicklist')
+    endif
+    if a:mode == 2 && !do_init
+        let repl = a:0 >= 1 ? a:1 : workbook#GetRepl()
+        let do_init = has_key(repl, 'GetQuicklist')
+    endif
+    if do_init
+        exec 'nnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#Quicklist(expand("<cword>"))<cr>'
+        exec 'xnoremap <buffer> '. g:workbook#map_leader .'q :call workbook#Quicklist(join(tlib#selection#GetSelection("v"), " "))<cr>'
+    endif
+endf
+
+
+" In workbooks the following maps can be used:
+" |g:workbook#map_evalblock| ... Eval the current block (usually the 
+"               current paragraph or visually selected code)
+" |g:workbook#map_evalinsertblock ... Eval the current block with 
+"               |g:workbook#insert_results_in_buffer| reverted
+" |g:workbook#map_op|{motion} ... Operator: eval some code
+" |g:workbook#map_op| ... Visual mode: eval some code
+"
+" In the following maps, <WML> is |g:workbook#map_leader|:
+" <WML>r    ... Interactive REPL (sort of)
+" <WML>z    ... Reset the inferior process (if supported)
+" <WML>c    ... Remove the next result block
+" <WML>C    ... Remove all result blocks in the current buffer
+" <WML>q    ... Display the quicklist (if supported)
+" <WML><F1> ... Get some help
 function! workbook#SetupBuffer(...) abort "{{{3
     let repl = a:0 >= 1 ? a:1 : {}
     if !exists('b:workbook_setup_done')
@@ -194,15 +222,19 @@ function! workbook#SetupBuffer(...) abort "{{{3
         exec 'nnoremap <buffer>' g:workbook#map_leader .'c :call workbook#StripResults(line("."), line("."))<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'C :call workbook#StripResults(1, line("$"))<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'<f1> :Workbookhelp<cr>'
-        " exec 'syntax match WorkbookResult /'. escape(repl.GetResultLineRx(1), '/') .'/ contains=@'. &ft
-        if &omnifunc !=# 'workbook#OmniComplete'
-            let b:workbook_orig_omnifunc = &omnifunc
-            setl omnifunc=workbook#OmniComplete
-        endif
-        " try
+        try
             call workbook#ft#{&filetype}#SetupBuffer()
-		" catch /^Vim\%((\a\+)\)\=:E117/
-        " endtry
+		catch /^Vim\%((\a\+)\)\=:E117/
+        endtry
+        call workbook#InitQuicklist(1)
+    endif
+endf
+
+
+function! workbook#SetOmnifunc() abort "{{{3
+    if &omnifunc !=# 'workbook#OmniComplete'
+        let b:workbook_orig_omnifunc = &omnifunc
+        setlocal omnifunc=workbook#OmniComplete
     endif
 endf
 
@@ -290,10 +322,12 @@ function! workbook#UndoSetup() abort "{{{3
     exec 'nunmap <buffer>' g:workbook#map_leader .'z'
     exec 'nunmap <buffer>' g:workbook#map_leader .'c'
     exec 'nunmap <buffer>' g:workbook#map_leader .'C'
-    exec 'nunmap <buffer>' g:workbook#map_leader .'q'
-    exec 'xunmap <buffer>' g:workbook#map_leader .'q'
-    let &l:omnifunc = b:workbook_orig_omnifunc
-    unlet! b:workbook_orig_omnifunc
+    exec 'silent! nunmap <buffer>' g:workbook#map_leader .'q'
+    exec 'silent! xunmap <buffer>' g:workbook#map_leader .'q'
+    if exists('b:workbook_orig_omnifunc')
+        let &l:omnifunc = b:workbook_orig_omnifunc
+        unlet! b:workbook_orig_omnifunc
+    endif
     unlet! b:workbook_setup_done
     try
         call workbook#ft#{&filetype}#UndoSetup()
@@ -588,8 +622,25 @@ endf
 function! workbook#Quicklist(word) "{{{3
     " TLogVAR a:word
     let repl = workbook#GetRepl()
-    if has_key(repl, 'quicklist')
-        let ql = map(copy(repl.quicklist), 'tlib#string#Printf1(v:val, a:word)')
+    if has_key(repl, 'GetQuicklist')
+        let quicklist = repl.GetQuicklist()
+    else
+        let ft = get(repl, 'filetype', &filetype)
+        if exists('g:workbook#ft#'. ft .'#quicklist')
+            let quicklist = g:workbook#ft#{ft}#quicklist
+        else
+            let quicklist = []
+        endif
+    endif
+    if !empty(quicklist)
+        let filename = expand('%:p')
+        if has_key(repl, 'GetFilename')
+            let filename = repl.GetFilename(filename)
+        endif
+        let dict = {
+                    \ 'filename': filename,
+                    \ 'cword': a:word}
+        let ql = map(copy(quicklist), 'tlib#string#Format(v:val, dict)')
         let code = tlib#input#List('s', 'Select function:', ql, g:workbook#handlers)
         if !empty(code)
             call workbook#Send(code)

@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-05
-" @Revision:    523
+" @Last Change: 2017-03-16
+" @Revision:    526
 
 " NOTES:
 " - command-line completion? 
@@ -61,8 +61,15 @@ endif
 " let s:WrapCode = {p, c -> printf("printfn \"WorkbookBEGIN:%%s\\n\" \"%s\";;\n\n%s;;\n\nprintfn \"WorkbookEND:%%s\\n\" \"%s\";;\n", p, c, p)}
 let s:WrapCode = {p, c -> printf("println(\"WorkbookBEGIN:%s\")\n%s\nprintln(\"WorkbookEND:%s\")\n", p, c, p)}
 
+
+" Omni completion (see 'omnifunc') is enabled.
+function! workbook#ft#scala#SetupBuffer() abort "{{{3
+    Tlibtrace 'workbook', 'SetupBuffer'
+    call workbook#SetOmnifunc()
+endf
+
+
 let s:prototype = {'debugged': {}
-            \ , 'quicklist': g:workbook#ft#scala#quicklist
             \ , 'wait_after_startup': g:workbook#ft#scala#wait_after_startup
             \ }
             " \ ,'repl_type': 'vim_nl'

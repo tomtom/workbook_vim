@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-05
-" @Revision:    503
+" @Last Change: 2017-03-16
+" @Revision:    504
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -58,7 +58,6 @@ endif
 let s:WrapCode = {p, c -> printf("printfn \"WorkbookBEGIN:%s\\n\";\n%s\nprintfn \"WorkbookEND:%s\\n\";;\n", p, c, p)}
 
 let s:prototype = {'debugged': {}
-            \ , 'quicklist': g:workbook#ft#fsharp#quicklist
             \ , 'wait_after_startup': g:workbook#ft#fsharp#wait_after_startup
             \ }
             " \ ,'repl_type': 'vim_nl'

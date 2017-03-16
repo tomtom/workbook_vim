@@ -1,8 +1,18 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-15
-" @Revision:    492
+" @Last Change: 2017-03-16
+" @Revision:    501
+
+
+if !exists('g:workbook#ft#rmd#quicklist')
+    let g:workbook#ft#rmd#quicklist = ['knitr::knit("%{filename}")', 'rmarkdown::render("%{filename}", "html_document")', 'rmarkdown::render("%{filename}", "pdf_document")']   "{{{2
+    if exists('g:workbook#ft#rmd_quicklist_etc')
+        let g:workbook#ft#rmd#quicklist += g:workbook#ft#rmd_quicklist_etc
+    endif
+endif
+let g:workbook#ft#rmd#quicklist += g:workbook#ft#r#quicklist
+
 
 
 function! workbook#ft#rmd#SetupBuffer() abort "{{{3
@@ -79,4 +89,10 @@ function! s:prototype.GotoNextBlockExpr() abort dict "{{{3
     " return "/\\ze\\n\\s*```{r\<cr>"
     return "/\\%(\\%(^\\|\\s\\)``\\@!\\|^\\s*```{r\\>.*\\n\\)\\zs\<cr>"
 endf
+
+
+function! s:prototype.GetFilename(filename) abort dict "{{{3
+    return workbook#ft#r#GetFilename(a:filename)
+endf
+
 
