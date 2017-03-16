@@ -1,0 +1,19 @@
+version: "0.02"
+  - Script ID
+  - vim_raw, vim_nl: NEW wait_after_startup property
+  - Command-line completion for :Workbook
+  - Proper error for unsupported filetypes
+  - g:workbook#map_evalblock: Block expression is configurable
+  - Improve maps & movements
+  - Misc enhancements + exprimental filetypes
+  - FIX fsharp
+  - Experimental support for scala
+  - workbook#OmniComplete: Always include omnifunc results if available
+  - Slightly improved: f#, scala
+  - Eval: always wrap code
+  - r: use save & restore by default; support for codetools::checkUsage(), formatR::tidy_source()
+  - FIX maps; FIX rmd support; FIX R support for formatR
+  - Misc enhancements: Improved Rmarkdown (rmd) support etc.
+  - Support for ruby
+  MD5 checksum: 873d7f1fec86456cd267c9e29e8796cd
+
