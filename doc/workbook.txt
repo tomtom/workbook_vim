@@ -2,39 +2,41 @@
                 Author: Thomas Link, micathom AT gmail com?subject=vim
 
 The long-term goal of this plugin is to provide notebook-like interaction with 
-interpreted languages similar to the Mathematica or Jupyter (within the limits 
+interpreted languages similar to Mathematica or Jupyter (within the limits 
 of a text editor like vim).
 
 Features~
 - Run an interpreter as an inferior process.
 - Send code to this process (asynchronously without blocking vim).
 - Insert (or dynamically update) the results into the source code (as 
-  commented out block below the respective source code).
+  commented out block below the respective source code). See also 
+  |g:workbook#insert_results_in_buffer|.
 - Transcribe the interaction with the interpreter.
-- Provide code completion (see 'omnifunc') for supported filetypes.
+- Provide code completion (see 'omnifunc') for some filetypes.
 
 How to use this plugin~
 - Open a file with a supported filetype (see below or 
   |workbook#GetSupportedFiletypes()|).
-- Type |:Workbook| or add the filetype to 
-  |g:workbook_autosetup_filetypes| to automatically enable the workbook 
-  mode for the specified filetypes.
+- Type |:Workbook| or add the filetype to |g:workbook_autosetup_filetypes| to 
+  automatically enable the workbook mode for the specified filetypes.
 - Press <c-cr> to evaluate the current paragraph.
-- Press <localleader>w<F1> for help on other commands and maps.
+- Press <localleader>w<F1> for help on other commands and maps -- see also 
+  |workbook#SetupBuffer()|.
 
-The following filetypes are supported~
+The following filetypes are supported well~
 - R (supports code completion)
+- Rmd (same as R)
 
-Plus experimental/basic support for:
+Experimental/basic support is provided for:
 - fsharp
+- ruby
 - scala
 - sh (default: bash)
 - vim
 
 Currenty, the main use case is to interact with R. Other than other 
 well-known R-related vim plugins, the workbook plugin has no non-vim 
-dependencies and works at least on Linux and Windows with no problems. 
-The vim and the bash backend are mostly there to get the code right.
+dependencies and works at least on Linux and Windows with no problems.
 
 
 -----------------------------------------------------------------------
@@ -71,6 +73,7 @@ Contents~
         g:workbook#map_evalinsertblock ............ |g:workbook#map_evalinsertblock|
         g:workbook#transcript ..................... |g:workbook#transcript|
         g:workbook#insert_results_in_buffer ....... |g:workbook#insert_results_in_buffer|
+        workbook#SetupBuffer ...................... |workbook#SetupBuffer()|
         :Workbooksend ............................. |:Workbooksend|
         :Workbookeval ............................. |:Workbookeval|
         :Workbookrepl ............................. |:Workbookrepl|
@@ -87,8 +90,10 @@ Contents~
         g:workbook#ft#r#handle_qfl_expression_f ... |g:workbook#ft#r#handle_qfl_expression_f|
         g:workbook#ft#r#use_formatR ............... |g:workbook#ft#r#use_formatR|
         g:workbook#ft#r#formatR_options ........... |g:workbook#ft#r#formatR_options|
+        workbook#ft#r#SetupBuffer ................. |workbook#ft#r#SetupBuffer()|
         workbook#ft#r#Debug ....................... |workbook#ft#r#Debug()|
         workbook#ft#r#Undebug ..................... |workbook#ft#r#Undebug()|
+        workbook#ft#scala#SetupBuffer ............. |workbook#ft#scala#SetupBuffer()|
         prototype.Input
         prototype.Send
         prototype.Eval
@@ -152,6 +157,24 @@ g:workbook#insert_results_in_buffer (default: -1)
     This parameter will be overridden by the value of 
     b:workbook_insert_results_in_buffer_once or 
     b:workbook_insert_results_in_buffer if existant.
+
+                                                    *workbook#SetupBuffer()*
+workbook#SetupBuffer(...)
+    In workbooks the following maps can be used:
+    |g:workbook#map_evalblock| ... Eval the current block (usually the 
+                  current paragraph or visually selected code)
+    |g:workbook#map_evalinsertblock ... Eval the current block with 
+                  |g:workbook#insert_results_in_buffer| reverted
+    |g:workbook#map_op|{motion} ... Operator: eval some code
+    |g:workbook#map_op| ... Visual mode: eval some code
+
+    In the following maps, <WML> is |g:workbook#map_leader|:
+    <WML>r    ... Interactive REPL (sort of)
+    <WML>z    ... Reset the inferior process (if supported)
+    <WML>c    ... Remove the next result block
+    <WML>C    ... Remove all result blocks in the current buffer
+    <WML>q    ... Display the quicklist (if supported)
+    <WML><F1> ... Get some help
 
                                                     *:Workbooksend*
 :Workbooksend
@@ -224,6 +247,27 @@ g:workbook#ft#r#use_formatR    (default: 1)
 g:workbook#ft#r#formatR_options (default: '')
     Additional arguments to formatR::tidy_source().
 
+                                                    *workbook#ft#r#SetupBuffer()*
+workbook#ft#r#SetupBuffer()
+    In R workbooks the following additional maps are set (<WML> is 
+    |g:workbook#map_leader|):
+
+    <WML>cd ... Set the working directory in R to VIM's working directory
+    <WML>d  ... Debug the word under the cursor
+    <WML>i  ... Inspect the word under the cursor
+    <WML>k  ... Get help on the word under the cursor
+    <WML>s  ... Source the current file
+
+    The following maps require codetools to be installed in R:
+    <WML>cu ... Run checkUsage on the global environment
+
+    The following maps require formatR to be installed in R:
+    <WML>f{motion} ... Format some code
+    <WML>f  ... In visual mode: format some code
+    <WML>ff ... Format the current paragraph
+
+    Omni completion (see 'omnifunc') is enabled.
+
                                                     *workbook#ft#r#Debug()*
 workbook#ft#r#Debug(fn)
     Toggle the debug status of a function.
@@ -231,6 +275,13 @@ workbook#ft#r#Debug(fn)
                                                     *workbook#ft#r#Undebug()*
 workbook#ft#r#Undebug(fn)
     Undebug a debugged function.
+
+
+------------------------------------------------------------------------
+                                                    *autoload/workbook/ft/scala.vim*
+                                                    *workbook#ft#scala#SetupBuffer()*
+workbook#ft#scala#SetupBuffer()
+    Omni completion (see 'omnifunc') is enabled.
 
 
 ------------------------------------------------------------------------
