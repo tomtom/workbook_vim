@@ -1,14 +1,14 @@
 " @Author:      Tom Link (micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-01
-" @Revision:    22
+" @Last Change: 2017-03-16
+" @Revision:    24
 " GetLatestVimScripts: 5527 0 :AutoInstall: workbook.vim
 
-if &cp || exists("loaded_workbook")
+if &cp || exists('g:loaded_workbook')
     finish
 endif
-let loaded_workbook = 1
+let g:loaded_workbook = 2
 
 let s:save_cpo = &cpo
 set cpo&vim
