@@ -29,6 +29,8 @@ The following filetypes are supported well~
 
 Experimental/basic support is provided for:
 - fsharp
+- javascript
+- python
 - ruby
 - scala
 - sh (default: bash)

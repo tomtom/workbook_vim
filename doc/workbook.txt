@@ -29,6 +29,8 @@ The following filetypes are supported well~
 
 Experimental/basic support is provided for:
 - fsharp
+- javascript
+- python
 - ruby
 - scala
 - sh (default: bash)
@@ -94,6 +96,7 @@ Contents~
         workbook#ft#r#Debug ....................... |workbook#ft#r#Debug()|
         workbook#ft#r#Undebug ..................... |workbook#ft#r#Undebug()|
         workbook#ft#scala#SetupBuffer ............. |workbook#ft#scala#SetupBuffer()|
+        workbook#ft#vim#New ....................... |workbook#ft#vim#New()|
         prototype.Input
         prototype.Send
         prototype.Eval
@@ -282,6 +285,14 @@ workbook#ft#r#Undebug(fn)
                                                     *workbook#ft#scala#SetupBuffer()*
 workbook#ft#scala#SetupBuffer()
     Omni completion (see 'omnifunc') is enabled.
+
+
+------------------------------------------------------------------------
+                                                    *autoload/workbook/ft/vim.vim*
+                                                    *workbook#ft#vim#New()*
+workbook#ft#vim#New(ext)
+    NOTE: The scope of variables should be made explicit, where `l:` means 
+    local to the currently evaluated code.
 
 
 ------------------------------------------------------------------------
