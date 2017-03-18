@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-15
-" @Revision:    490
+" @Last Change: 2017-03-18
+" @Revision:    491
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -294,6 +294,9 @@ function! s:prototype.ConsumeError(msg, ...) abort dict "{{{3
     Tlibtrace 'workbook', 'ConsumeError', a:msg
     let msg = self.PrepareMessage(a:msg)
     let parts = self.SplitMessage(msg)
+    if has_key(self, 'FilterErrorMessageLines')
+        let parts = self.FilterErrorMessageLines(parts)
+    endif
     Tlibtrace 'workbook', 'ConsumeError', parts
     if !empty(parts)
         let id = self.id
