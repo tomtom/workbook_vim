@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-16
-" @Revision:    550
+" @Last Change: 2017-03-19
+" @Revision:    551
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -169,6 +169,7 @@ let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\n
 
 
 let s:prototype = {'debugged': {}
+            \ , 'result_syntax': 'rComment'
             \ , 'wait_after_startup': g:workbook#ft#r#wait_after_startup
             \ }
             " \ ,'repl_type': 'vim_nl'

@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-18
-" @Revision:    491
+" @Last Change: 2017-03-19
+" @Revision:    495
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -134,6 +134,7 @@ function! s:prototype.Eval(code) abort dict "{{{3
                 Tlibtrace 'workbook', 'Eval', i
             endwh
             let result = get(self, 'eval_result', '')
+            Tlibtrace 'workbook', 'Eval', result
         finally
             if has_key(self, 'eval_result')
                 unlet self.eval_result
@@ -171,7 +172,7 @@ endf
 function! s:prototype.GetCommentLineRx(...) abort dict "{{{3
     let highlight = a:0 >= 1 ? a:1 : 0
     let rxf = self.GetCommentLineRxf()
-    let brx = a:0 >= 2 ? a:2 : (rxf =~ '%s$' ? '.*' : '.\{-}')
+    let brx = a:0 >= 2 ? a:2 : (rxf =~# '%s$' ? '.*' : '.\{-}')
     if highlight
         let brx = '\zs'.brx
     endif
@@ -182,11 +183,11 @@ endf
 function! s:prototype.GetResultLineRx(...) abort dict "{{{3
     let highlight = a:0 >= 1 ? a:1 : 0
     let rxf = self.GetCommentLineRxf()
-    let brx = a:0 >= 2 ? a:2 : (rxf =~ '%s$' ? '.*' : '.\{-}')
+    let brx = a:0 >= 2 ? a:2 : (rxf =~# '%s$' ? ' .*' : ' .\{-}')
     if highlight
-        let brx = '\zs'.brx
+        let brx = '\zs'. brx .'\ze'
     endif
-    return printf('^\s*'. rxf. '$', '=[>!?] '. brx)
+    return printf('^\s*'. rxf. '$', '=[>!?]'. brx)
 endf
 
 

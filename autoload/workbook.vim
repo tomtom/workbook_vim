@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-17
-" @Revision:    838
+" @Last Change: 2017-03-19
+" @Revision:    848
 
 
 if v:version < 800
@@ -154,6 +154,14 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
         let s:repls[id] = repl
     endif
     let s:buffers[bufnr] = id
+    " if has_key(repl, 'result_syntax')
+    "     let rl = repl.GetResultLineRx(1)
+    "     let group = repl.result_syntax
+    "     echom 'syntax include @WorkbookResult syntax/'. repl.filetype .'.vim'
+    "     exec 'syntax include @WorkbookResult syntax/'. repl.filetype .'.vim'
+    "     echom 'syntax match WorkbookResultLine /'. escape(rl, '/') .'/ contains=@WorkbookResult containedin='. group
+    "     exec 'syntax match WorkbookResultLine /'. escape(rl, '/') .'/ contains=@WorkbookResult containedin='. group
+    " endif
     call workbook#SetupBuffer(repl)
     call workbook#InitQuicklist(2, repl)
     if has_key(repl, 'InitBufferFiletype')
@@ -198,7 +206,7 @@ function! workbook#SetupBuffer(...) abort "{{{3
     let repl = a:0 >= 1 ? a:1 : {}
     if !exists('b:workbook_setup_done')
         let b:workbook_setup_done = 1
-        autocmd Workbook Bufwipeout <buffer> call workbook#RemoveBuffer(expand("<abuf>"))
+        autocmd Workbook Bufwipeout <buffer> call workbook#RemoveBuffer(expand('<abuf>'))
         " Send code to the REPL.
         command -buffer -nargs=1 Workbooksend call workbook#Send(<q-args>)
         " Eval some code and display the result.
@@ -433,7 +441,7 @@ function! workbook#Stop(...) abort "{{{3
     let id = repl.id
     Tlibtrace 'workbook', id
     if has_key(s:repls, id)
-        let s:buffers = filter(s:buffers, {key, val -> val != id})
+        let s:buffers = filter(s:buffers, 'v:val != id')
         call repl.Stop(args)
         unlet! s:repls[id]
     endif
@@ -502,12 +510,12 @@ function! workbook#StripResults(line1, line2, ...) abort "{{{3
     let line2 = a:line2
     let line3 = a:line2 + 1
     let line = getline(line3)
-    while line3 <= line('$') && line =~ result_rx
+    while line3 <= line('$') && line =~# result_rx
         exec line3 'delete'
         let line = getline(line3)
     endwh
     for lnum in range(line2, line1, -1)
-        if getline(lnum) =~ result_rx
+        if getline(lnum) =~# result_rx
             exec lnum 'delete'
             let line2 -= 1
         endif

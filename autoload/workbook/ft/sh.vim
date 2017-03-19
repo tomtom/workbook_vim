@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-02-26
-" @Revision:    62
+" @Last Change: 2017-03-19
+" @Revision:    77
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
@@ -54,9 +54,10 @@ if !exists('g:workbook#ft#sh#wait_after_send_line')
 endif
 
 
-" let s:wrap_code_f = "%s\necho '%s'"   "{{{2
-let s:WrapCode = {p, c -> printf("echo 'WorkbookBEGIN:%s'\n%s\necho 'WorkbookEND:%s'", p, c, p)}
-
+" " Omni completion (see 'omnifunc') is enabled.
+" function! workbook#ft#sh#SetupBuffer() abort "{{{3
+"     call workbook#SetOmnifunc()
+" endf
 
 let s:prototype = {}
 
@@ -88,13 +89,15 @@ endf
 
 function! s:prototype.WrapCode(placeholder, code) abort dict "{{{3
     " let wcode = printf(s:wrap_code_f, a:code, self.GetMark(a:placeholder))
-    let wcode = s:WrapCode(self.GetMark(a:placeholder), a:code)
+    let p = self.GetMark(a:placeholder)
+    let wcode = printf('echo ''WorkbookBEGIN:%s''\n%s\necho ''WorkbookEND:%s''', p, a:code, p)
     return wcode
 endf
 
 
+" " Works only in interactive mode
 " function! s:prototype.Complete(text) abort dict "{{{3
-"     let cs = self.Eval(a:text ."\<esc>\<esc>\<c-c>")
+"     let cs = self.Eval(a:text ."\<tab>\<c-c>")
 "     return split(cs, "[\t\n\j]")
 " endf
 
