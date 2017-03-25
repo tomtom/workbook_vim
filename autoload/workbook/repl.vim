@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-19
-" @Revision:    495
+" @Last Change: 2017-03-22
+" @Revision:    496
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -11,6 +11,10 @@ endif
 
 if !exists('g:workbook#repl#transript_drop_cmd')
     let g:workbook#repl#transript_drop_cmd = 'drop'   "{{{2
+endif
+
+if !exists('g:workbook#repl#transcriber_vimserver')
+    let g:workbook#repl#transcriber_vimserver = ''   "{{{2
 endif
 
 
