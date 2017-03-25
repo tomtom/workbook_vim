@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-19
-" @Revision:    848
+" @Last Change: 2017-03-22
+" @Revision:    852
 
 
 if v:version < 800
@@ -64,7 +64,6 @@ if !exists('g:workbook#insert_results_in_buffer')
     let g:workbook#insert_results_in_buffer = -1   "{{{2
 endif
 
-
 if !exists('g:workbook#debug')
     let g:workbook#debug = 0   "{{{2
 endif
@@ -76,7 +75,6 @@ endif
 
 
 augroup Workbook
-    autocmd!
     autocmd VimLeave * call workbook#StopAll()
 augroup END
 
