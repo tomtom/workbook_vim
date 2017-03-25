@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-19
-" @Revision:    551
+" @Last Change: 2017-03-22
+" @Revision:    553
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -133,8 +133,8 @@ function! workbook#ft#r#SetupBuffer() abort "{{{3
     endif
     exec 'nnoremap <buffer>' g:workbook#map_leader .'i :echo "<c-r><c-w>" workbook#Send(''str(<c-r><c-w>)'')<cr>'
     exec 'nnoremap <buffer>' g:workbook#map_leader .'k :call workbook#Send(''workbookKeyword(<c-r><c-w>, "<c-r><c-w>")'')<cr>'
-    if &l:keywordprg =~# '^\%(man\>\|help$\|$\)'
-        nnoremap <buffer> K :call workbook#Send('workbookKeyword(<c-r><c-w>, "<c-r><c-w>")')<cr>
+    if &l:keywordprg =~# '^\%(man\>\|:help$\|$\)'
+        nnoremap <buffer> K :call workbook#Send('?"<c-r><c-w>"')<cr>
     endif
     if &buftype != 'nofile'
         let filename = substitute(expand('%:p'), '\\', '/', 'g')
