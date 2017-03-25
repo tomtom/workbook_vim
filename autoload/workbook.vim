@@ -229,7 +229,8 @@ function! workbook#SetupBuffer(...) abort "{{{3
         exec 'nnoremap <buffer>' g:workbook#map_leader .'C :call workbook#StripResults(1, line("$"))<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'<f1> :Workbookhelp<cr>'
         try
-            call workbook#ft#{&filetype}#SetupBuffer()
+            let ft = get(repl, 'filetype', &filetype)
+            call workbook#ft#{ft}#SetupBuffer()
 		catch /^Vim\%((\a\+)\)\=:E117/
         endtry
         call workbook#InitQuicklist(1)
