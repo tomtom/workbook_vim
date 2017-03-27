@@ -43,13 +43,19 @@ function! workbook#repl#New(args) abort "{{{3
     let o = deepcopy(s:prototype)
     let o.args = a:args
     let o.filetype = get(o.args, 'filetype', &filetype)
-    try
-        let o = workbook#ft#{o.filetype}#New(o)
-    catch /^Vim\%((\a\+)\)\=:E117/
-        echoerr 'Workbook: Unsupported filetype:' o.filetype
-    endtry
-    let o = workbook#mode#{o.repl_type}#New(o)
-    return o
+    if empty(o.filetype)
+        return {}
+    else
+        try
+            let o = workbook#ft#{o.filetype}#New(o)
+        catch /^Vim\%((\a\+)\)\=:E117/
+            echoerr 'Workbook: Unsupported filetype:' string(o.filetype) v:exception
+            echom 'args:' string(a:args)
+            echom 'args:' string(a:args)
+        endtry
+        let o = workbook#mode#{o.repl_type}#New(o)
+        return o
+    endif
 endf
 
 
