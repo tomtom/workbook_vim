@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-22
-" @Revision:    852
+" @Last Change: 2017-03-27
+" @Revision:    855
 
 
 if v:version < 800
@@ -308,9 +308,9 @@ endf
 
 
 function! workbook#UndoSetup() abort "{{{3
+    let repl = workbook#GetRepl()
     let bufnr = bufnr('%')
     if has_key(s:buffers, bufnr)
-        let repl = workbook#GetRepl()
         if has_key(repl, 'UndoFiletype')
             call repl.UndoFiletype()
         endif
@@ -337,7 +337,8 @@ function! workbook#UndoSetup() abort "{{{3
     endif
     unlet! b:workbook_setup_done
     try
-        call workbook#ft#{&filetype}#UndoSetup()
+        let filetype = get(repl, 'filetype', &filetype)
+        call workbook#ft#{filetype}#UndoSetup()
     catch /^Vim\%((\a\+)\)\=:E117/
     endtry
 endf
