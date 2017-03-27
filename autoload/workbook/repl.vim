@@ -407,19 +407,31 @@ function! s:prototype.GetTranscriptId() abort dict "{{{3
 endf
 
 
+function! s:prototype.IsTranscriptVisible(...) abort dict "{{{3
+    let tid = a:0 >= 1 ? a:1 : self.GetTranscriptId()
+    " let rv = g:workbook#repl#display_transcript !=# 'always' && exists('*win_findbuf') ? !empty(win_findbuf(bufnr(tid))) : bufwinnr(tid) != -1
+    let rv = bufwinnr(tid) != -1
+    Tlibtrace 'workbook', 'IsTranscriptVisible', g:workbook#repl#display_transcript, exists('*win_findbuf'), rv
+    return rv
+endf
+
+
 function! s:prototype.TranscribeNow(timer) abort dict "{{{3
     Tlibtrace 'workbook', 'TranscribeNow', self.id, a:timer
     if has_key(self, 'redraw_timer') && self.redraw_timer == a:timer
         call remove(self, 'redraw_timer')
     endif
     let show = a:0 >= 1 ? a:1 : 0
-    let tabnr = tabpagenr()
-    let winnr = winnr()
-    let bufnr = bufnr('%')
+    let winid = tlib#win#GetID()
+    " let tabnr = tabpagenr()
+    " let winnr = winnr()
+    " let bufnr = bufnr('%')
     let tid = self.GetTranscriptId()
+    let this_is_a_log_buffer = exists('b:workbook_log_buffer')
     try
-        if bufnr(tid) == -1 || (!self.DoInsertResultsInBuffer(0) && bufwinnr(tid) == -1)
-            if !exists('b:workbook_log_buffer')
+        Tlibtrace 'workbook', 'TranscribeNow', bufnr(tid)
+        if bufnr(tid) == -1 || !self.IsTranscriptVisible(tid)
+            if !this_is_a_log_buffer
                 let ft = self.filetype
                 exec g:workbook#repl#transript_new_cmd fnameescape(tid)
                 " exec 'lcd' fnameescape(self.working_dir)
@@ -431,14 +443,18 @@ function! s:prototype.TranscribeNow(timer) abort dict "{{{3
                 setlocal nospell
                 setlocal modifiable
                 setlocal noreadonly
-                exec 'setl ft='. get(self, 'transcript_filetype', ft)
+                let tft = get(self, 'transcript_filetype', ft)
+                if !empty(tft)
+                    exec 'setl ft='. tft
+                endif
                 syntax match WorkbookError /^!!!\t.*$/
                 hi def link WorkbookError ErrorMsg
                 syntax match WorkbookDebug /^\CDDD\t.*$/
                 hi def link WorkbookDebug NonText
                 let b:workbook_log_buffer = self.id
                 let self.bufnr = bufnr('%')
-                Workbook
+                " exec 'Workbook --filetype='. ft
+                call workbook#InitBuffer({'filetype': ft})
                 " call workbook#SetupBuffer()
                 let hd = printf(self.GetResultLinef(), '! '. strftime('%c') .' -- '. self.id)
                 call append(0, hd)
@@ -452,20 +468,24 @@ function! s:prototype.TranscribeNow(timer) abort dict "{{{3
             $
             " redraw
         endif
+        " g:workbook#repl#display_transcript ==# 'always' && 
+        if !this_is_a_log_buffer && bufwinnr(tid) == -1
+            exec g:workbook#repl#transript_new_cmd fnameescape(tid)
+        endif
     finally
-        if tabpagenr() != tabnr
-            exec 'tabnext' tabnr
-        endif
-        if winnr() != winnr
-            exec winnr 'wincmd w'
-        endif
-        if self.bufnr != bufnr
-            exec 'hide buffer' bufnr
+        if !this_is_a_log_buffer
+            call tlib#win#GotoID(winid)
+            " if tabpagenr() != tabnr
+            "     exec 'tabnext' tabnr
+            " endif
+            " if winnr() != winnr
+            "     exec winnr 'wincmd w'
+            " endif
+            " if has_key(self, 'bufnr') && self.bufnr != bufnr
+            "     exec 'hide buffer' bufnr
+            " endif
         endif
     endtry
-    if bufwinnr(tid) == -1
-        exec g:workbook#repl#transript_new_cmd fnameescape(tid)
-    endif
 endf
 
 
