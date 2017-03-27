@@ -151,11 +151,10 @@ g:workbook#transcript          (default: 1)
     If true, maintain a transcript
 
                                                     *g:workbook#insert_results_in_buffer*
-g:workbook#insert_results_in_buffer (default: -1)
+g:workbook#insert_results_in_buffer (default: 1)
     If not zero, insert the results of an evaluation below the 
     evaluated code.
     If 1, insert the result.
-    If -1, insert the result only if the transcipt isn't visible.
 
     This parameter will be overridden by the value of 
     b:workbook_insert_results_in_buffer_once or 
