@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-22
-" @Revision:    553
+" @Last Change: 2017-03-27
+" @Revision:    558
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -141,6 +141,7 @@ function! workbook#ft#r#SetupBuffer() abort "{{{3
         exec 'nnoremap <buffer>' g:workbook#map_leader .'s :call workbook#Send("source('. string(filename) .')")<cr>'
     endif
     call workbook#SetOmnifunc()
+    syntax match Comment '^\s*#.*$'
 endf
 
 
@@ -170,6 +171,7 @@ let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\n
 
 let s:prototype = {'debugged': {}
             \ , 'result_syntax': 'rComment'
+            \ , 'transcript_filetype': ''
             \ , 'wait_after_startup': g:workbook#ft#r#wait_after_startup
             \ }
             " \ ,'repl_type': 'vim_nl'

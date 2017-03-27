@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-16
-" @Revision:    501
+" @Last Change: 2017-03-27
+" @Revision:    502
 
 
 if !exists('g:workbook#ft#rmd#quicklist')
@@ -25,7 +25,7 @@ function! workbook#ft#rmd#UndoSetup() abort "{{{3
 endf
 
 
-let s:prototype = {'transcript_filetype': 'r'}
+let s:prototype = {}
 
 
 function! workbook#ft#rmd#New(ext) abort "{{{3
