@@ -17,6 +17,10 @@ if !exists('g:workbook#repl#transcriber_vimserver')
     let g:workbook#repl#transcriber_vimserver = ''   "{{{2
 endif
 
+" if !exists('g:workbook#repl#display_transcript')
+"     let g:workbook#repl#display_transcript = 'always'   "{{{2
+" endif
+
 
 let s:prototype = {
             \ 'bufnrs': {},
@@ -98,13 +102,15 @@ function! s:prototype.DoInsertResultsInBuffer(insert_now) abort dict "{{{3
         let do_insert_results_in_buffer = self.do_insert_results_in_buffer
     endif
     Tlibtrace 'workbook', 'DoInsertResultsInBuffer', do_insert_results_in_buffer
-    if do_insert_results_in_buffer < 0
-        let bufname = self.GetTranscriptId()
-        let win = bufwinnr(bufname)
-        return win == -1
-    else
+    " if do_insert_results_in_buffer < 0
+    "     let bufname = self.GetTranscriptId()
+    "     let win = bufwinnr(bufname)
+    "     Tlibtrace 'workbook', 'DoInsertResultsInBuffer', win
+    "     return win == -1
+    " else
+        Tlibtrace 'workbook', 'DoInsertResultsInBuffer', do_insert_results_in_buffer
         return do_insert_results_in_buffer
-    endif
+    " endif
 endf
 
 
@@ -394,19 +400,31 @@ function! s:prototype.GetTranscriptId() abort dict "{{{3
 endf
 
 
+function! s:prototype.IsTranscriptVisible(...) abort dict "{{{3
+    let tid = a:0 >= 1 ? a:1 : self.GetTranscriptId()
+    " let rv = g:workbook#repl#display_transcript !=# 'always' && exists('*win_findbuf') ? !empty(win_findbuf(bufnr(tid))) : bufwinnr(tid) != -1
+    let rv = bufwinnr(tid) != -1
+    Tlibtrace 'workbook', 'IsTranscriptVisible', g:workbook#repl#display_transcript, exists('*win_findbuf'), rv
+    return rv
+endf
+
+
 function! s:prototype.TranscribeNow(timer) abort dict "{{{3
     Tlibtrace 'workbook', 'TranscribeNow', self.id, a:timer
     if has_key(self, 'redraw_timer') && self.redraw_timer == a:timer
         call remove(self, 'redraw_timer')
     endif
     let show = a:0 >= 1 ? a:1 : 0
-    let tabnr = tabpagenr()
-    let winnr = winnr()
-    let bufnr = bufnr('%')
+    let winid = tlib#win#GetID()
+    " let tabnr = tabpagenr()
+    " let winnr = winnr()
+    " let bufnr = bufnr('%')
     let tid = self.GetTranscriptId()
+    let this_is_a_log_buffer = exists('b:workbook_log_buffer')
     try
-        if bufnr(tid) == -1 || (!self.DoInsertResultsInBuffer(0) && bufwinnr(tid) == -1)
-            if !exists('b:workbook_log_buffer')
+        Tlibtrace 'workbook', 'TranscribeNow', bufnr(tid)
+        if bufnr(tid) == -1 || !self.IsTranscriptVisible(tid)
+            if !this_is_a_log_buffer
                 let ft = self.filetype
                 exec g:workbook#repl#transript_new_cmd fnameescape(tid)
                 " exec 'lcd' fnameescape(self.working_dir)
@@ -439,20 +457,24 @@ function! s:prototype.TranscribeNow(timer) abort dict "{{{3
             $
             " redraw
         endif
+        " g:workbook#repl#display_transcript ==# 'always' && 
+        if !this_is_a_log_buffer && bufwinnr(tid) == -1
+            exec g:workbook#repl#transript_new_cmd fnameescape(tid)
+        endif
     finally
-        if tabpagenr() != tabnr
-            exec 'tabnext' tabnr
-        endif
-        if winnr() != winnr
-            exec winnr 'wincmd w'
-        endif
-        if self.bufnr != bufnr
-            exec 'hide buffer' bufnr
+        if !this_is_a_log_buffer
+            call tlib#win#GotoID(winid)
+            " if tabpagenr() != tabnr
+            "     exec 'tabnext' tabnr
+            " endif
+            " if winnr() != winnr
+            "     exec winnr 'wincmd w'
+            " endif
+            " if has_key(self, 'bufnr') && self.bufnr != bufnr
+            "     exec 'hide buffer' bufnr
+            " endif
         endif
     endtry
-    if bufwinnr(tid) == -1
-        exec g:workbook#repl#transript_new_cmd fnameescape(tid)
-    endif
 endf
 
 

@@ -56,12 +56,12 @@ if !exists('g:workbook#insert_results_in_buffer')
     " If not zero, insert the results of an evaluation below the 
     " evaluated code.
     " If 1, insert the result.
-    " If -1, insert the result only if the transcipt isn't visible.
     "
     " This parameter will be overridden by the value of 
     " b:workbook_insert_results_in_buffer_once or 
     " b:workbook_insert_results_in_buffer if existant.
-    let g:workbook#insert_results_in_buffer = -1   "{{{2
+    let g:workbook#insert_results_in_buffer = 1   "{{{2
+    " If -1, insert the result only if the transcipt isn't visible.
 endif
 
 if !exists('g:workbook#debug')
