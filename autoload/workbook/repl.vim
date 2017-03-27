@@ -268,7 +268,7 @@ function! s:prototype.ConsumeOutput(type, msg, ...) abort dict "{{{3
         let parts = self.FilterMessageLines(parts)
     endif
     if has_key(self, 'ProcessLine')
-        let parts = map(parts, {i, val -> self.ProcessLine(val)})
+        let parts = map(parts, 'self.ProcessLine(v:val)')
     endif
     let use_begin_mark = has_key(self, 'GetPlaceholderFromBeginMark')
     let use_end_mark = has_key(self, 'GetPlaceholderFromEndMark')
