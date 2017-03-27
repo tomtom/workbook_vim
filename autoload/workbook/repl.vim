@@ -109,13 +109,15 @@ function! s:prototype.DoInsertResultsInBuffer(insert_now) abort dict "{{{3
         let do_insert_results_in_buffer = self.do_insert_results_in_buffer
     endif
     Tlibtrace 'workbook', 'DoInsertResultsInBuffer', do_insert_results_in_buffer
-    if do_insert_results_in_buffer < 0
-        let bufname = self.GetTranscriptId()
-        let win = bufwinnr(bufname)
-        return win == -1
-    else
+    " if do_insert_results_in_buffer < 0
+    "     let bufname = self.GetTranscriptId()
+    "     let win = bufwinnr(bufname)
+    "     Tlibtrace 'workbook', 'DoInsertResultsInBuffer', win
+    "     return win == -1
+    " else
+        Tlibtrace 'workbook', 'DoInsertResultsInBuffer', do_insert_results_in_buffer
         return do_insert_results_in_buffer
-    endif
+    " endif
 endf
 
 
