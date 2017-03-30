@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-27
-" @Revision:    855
+" @Last Change: 2017-03-30
+" @Revision:    868
 
 
 if v:version < 800
@@ -474,8 +474,8 @@ function! workbook#Print(line1, line2, ...) abort "{{{3
         let repl.ignore_input = 0
         return
     endif
-    let [line1, line2] = workbook#StripResults(a:line1, a:line2, repl)
-    Tlibtrace 'workbook', line1, line2
+    let [may_insert, line1, line2] = workbook#StripResults(a:line1, a:line2, repl)
+    Tlibtrace 'workbook', may_insert, line1, line2
     " TODO allow for in line selection
     let lines = a:0 >= 1 ? a:1 : getline(line1, line2)
     Tlibtrace 'workbook', lines
@@ -488,7 +488,7 @@ function! workbook#Print(line1, line2, ...) abort "{{{3
     Tlibtrace 'workbook', placeholder
     let pos = getpos('.')
     try
-        if repl.DoInsertResultsInBuffer(0)
+        if may_insert && repl.DoInsertResultsInBuffer(0)
             let pline = indent . repl.GetResultLine('p', placeholder)
             call append(line2, [pline])
         else
@@ -512,21 +512,29 @@ function! workbook#StripResults(line1, line2, ...) abort "{{{3
     Tlibtrace 'workbook', a:line1, a:line2
     let repl = a:0 >= 1 ? a:1 : workbook#GetRepl()
     let result_rx = repl.GetResultLineRx()
+    let rxf = repl.GetCommentLineRxf()
+    let stop_line_rx = printf('^\s*'. rxf. '$', '=-')
     let line1 = a:line1
     let line2 = a:line2
     let line3 = a:line2 + 1
     let line = getline(line3)
-    while line3 <= line('$') && line =~# result_rx
-        exec line3 'delete'
-        let line = getline(line3)
-    endwh
-    for lnum in range(line2, line1, -1)
-        if getline(lnum) =~# result_rx
-            exec lnum 'delete'
-            let line2 -= 1
-        endif
-    endfor
-    return sort([line1, line2], {i1, i2 -> i1 == i2 ? 0 : i1 > i2 ? 1 : -1})
+    if line =~# stop_line_rx
+        let may_insert = 0
+    else
+        let may_insert = 1
+        while line3 <= line('$') && line =~# result_rx
+            exec line3 'delete'
+            let line = getline(line3)
+        endwh
+        for lnum in range(line2, line1, -1)
+            if getline(lnum) =~# result_rx
+                exec lnum 'delete'
+                let line2 -= 1
+            endif
+        endfor
+    endif
+    Tlibtrace 'workbook', may_insert, line1, line2
+    return [may_insert] + sort([line1, line2], {i1, i2 -> i1 == i2 ? 0 : i1 > i2 ? 1 : -1})
 endf
 
 
