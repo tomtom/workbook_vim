@@ -215,7 +215,7 @@ workbook#GetSupportedFiletypes()
 ------------------------------------------------------------------------
                                                     *autoload/workbook/ft/r.vim*
                                                     *g:workbook#ft#r#args*
-g:workbook#ft#r#args           (default: '--silent '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive'))
+g:workbook#ft#r#args           (default: '--silent '. (g:workbook#ft#r#cmd =~? '\<rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive'))
     let g:workbook#ft#r#args = '--slave --no-save'   "
 
                                                     *g:workbook#ft#r#save*
