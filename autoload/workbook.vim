@@ -381,8 +381,14 @@ function! workbook#Op(type, ...) abort "{{{3
     let &selection = 'inclusive'
     let reg_save = @@
     try
-        if a:0  " Invoked from Visual mode, use gv command.
-            silent exec "normal! gvy"
+        if a:0 >= 1  " Invoked from Visual mode, use gv command.
+            " silent exec "normal! gvy"
+            let repl = workbook#GetRepl()
+            let code = @@
+            if repl.DoTranscribe()
+                call repl.Transcribe('c', split(code, '\n'))
+            endif
+            call repl.Send(code, '')
         else
             let l1 = line("'[")
             let l2 = line("']")
