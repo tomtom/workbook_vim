@@ -670,7 +670,7 @@ function! workbook#EditItem(world, items) "{{{3
     let item = input('Edit> ', item)
     call inputrestore()
     " TLogVAR item
-    if item != ''
+    if !empty(item)
         let a:world.rv = item
         let a:world.state = 'picked'
         return a:world
