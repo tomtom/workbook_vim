@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-27
-" @Revision:    534
+" @Last Change: 2017-03-30
+" @Revision:    538
 
 
 if !exists('g:workbook#repl#transript_new_cmd')

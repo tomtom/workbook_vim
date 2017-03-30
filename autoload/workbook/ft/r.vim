@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-27
-" @Revision:    558
+" @Last Change: 2017-03-30
+" @Revision:    559
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -23,7 +23,7 @@ endif
 
 if !exists('g:workbook#ft#r#args')
     " let g:workbook#ft#r#args = '--slave --no-save'   "{{{2
-    let g:workbook#ft#r#args = '--silent '. (g:workbook#ft#r#cmd =~ '\<Rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive')   "{{{2
+    let g:workbook#ft#r#args = '--silent '. (g:workbook#ft#r#cmd =~? '\<rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive')   "{{{2
 endif
 
 
