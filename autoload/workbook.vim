@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-30
-" @Revision:    868
+" @Last Change: 2017-03-31
+" @Revision:    869
 
 
 if v:version < 800
@@ -518,21 +518,23 @@ function! workbook#StripResults(line1, line2, ...) abort "{{{3
     let line2 = a:line2
     let line3 = a:line2 + 1
     let line = getline(line3)
+    let may_insert = 1
+    while line3 <= line('$') && line =~# result_rx
+        exec line3 'delete'
+        let line = getline(line3)
+    endwh
     if line =~# stop_line_rx
         let may_insert = 0
-    else
-        let may_insert = 1
-        while line3 <= line('$') && line =~# result_rx
-            exec line3 'delete'
-            let line = getline(line3)
-        endwh
-        for lnum in range(line2, line1, -1)
-            if getline(lnum) =~# result_rx
-                exec lnum 'delete'
-                let line2 -= 1
-            endif
-        endfor
     endif
+    for lnum in range(line2, line1, -1)
+        let line = getline(lnum)
+        if line =~# result_rx
+            exec lnum 'delete'
+            let line2 -= 1
+        elseif line =~# stop_line_rx
+            let may_insert = 0
+        endif
+    endfor
     Tlibtrace 'workbook', may_insert, line1, line2
     return [may_insert] + sort([line1, line2], {i1, i2 -> i1 == i2 ? 0 : i1 > i2 ? 1 : -1})
 endf
