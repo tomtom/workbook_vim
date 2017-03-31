@@ -72,7 +72,7 @@ Contents~
         g:workbook#map_leader ..................... |g:workbook#map_leader|
         g:workbook#map_evalline ................... |g:workbook#map_evalline|
         g:workbook#map_evalblock .................. |g:workbook#map_evalblock|
-        g:workbook#map_evalinsertblock ............ |g:workbook#map_evalinsertblock|
+        g:workbook#map_evalinvblock ............... |g:workbook#map_evalinvblock|
         g:workbook#transcript ..................... |g:workbook#transcript|
         g:workbook#insert_results_in_buffer ....... |g:workbook#insert_results_in_buffer|
         workbook#SetupBuffer ...................... |workbook#SetupBuffer()|
@@ -142,9 +142,10 @@ g:workbook#map_evalline        (default: '<s-cr>')
 g:workbook#map_evalblock       (default: '<c-cr>')
     Evaluate the current paragraph or the current visual selection.
 
-                                                    *g:workbook#map_evalinsertblock*
-g:workbook#map_evalinsertblock (default: '<c-s-cr>')
-    Evaluate the current paragraph and always insert the result.
+                                                    *g:workbook#map_evalinvblock*
+g:workbook#map_evalinvblock    (default: '<c-s-cr>')
+    Evaluate the current paragraph with the value of 
+    |g:workbook#insert_results_in_buffer| inverted.
 
                                                     *g:workbook#transcript*
 g:workbook#transcript          (default: 1)
@@ -165,8 +166,8 @@ workbook#SetupBuffer(...)
     In workbooks the following maps can be used:
     |g:workbook#map_evalblock| ... Eval the current block (usually the 
                   current paragraph or visually selected code)
-    |g:workbook#map_evalinsertblock ... Eval the current block with 
-                  |g:workbook#insert_results_in_buffer| reverted
+    |g:workbook#map_evalinvblock ... Eval the current block with 
+                  |g:workbook#insert_results_in_buffer| inverted
     |g:workbook#map_op|{motion} ... Operator: eval some code
     |g:workbook#map_op| ... Visual mode: eval some code
 
