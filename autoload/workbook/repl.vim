@@ -2,7 +2,7 @@
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Last Change: 2017-03-30
-" @Revision:    538
+" @Revision:    539
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -17,10 +17,6 @@ endif
 if !exists('g:workbook#repl#transcriber_vimserver')
     let g:workbook#repl#transcriber_vimserver = ''   "{{{2
 endif
-
-" if !exists('g:workbook#repl#display_transcript')
-"     let g:workbook#repl#display_transcript = 'always'   "{{{2
-" endif
 
 
 let s:prototype = {
@@ -409,9 +405,8 @@ endf
 
 function! s:prototype.IsTranscriptVisible(...) abort dict "{{{3
     let tid = a:0 >= 1 ? a:1 : self.GetTranscriptId()
-    " let rv = g:workbook#repl#display_transcript !=# 'always' && exists('*win_findbuf') ? !empty(win_findbuf(bufnr(tid))) : bufwinnr(tid) != -1
     let rv = bufwinnr(tid) != -1
-    Tlibtrace 'workbook', 'IsTranscriptVisible', g:workbook#repl#display_transcript, exists('*win_findbuf'), rv
+    Tlibtrace 'workbook', 'IsTranscriptVisible', exists('*win_findbuf'), rv
     return rv
 endf
 
