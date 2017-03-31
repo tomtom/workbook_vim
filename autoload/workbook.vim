@@ -2,7 +2,7 @@
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Last Change: 2017-03-31
-" @Revision:    869
+" @Revision:    872
 
 
 if v:version < 800
@@ -42,9 +42,10 @@ if !exists('g:workbook#map_evalblock')
     let g:workbook#map_evalblock = '<c-cr>'   "{{{2
 endif
 
-if !exists('g:workbook#map_evalinsertblock')
-    " Evaluate the current paragraph and always insert the result.
-    let g:workbook#map_evalinsertblock = '<c-s-cr>'   "{{{2
+if !exists('g:workbook#map_evalinvblock')
+    " Evaluate the current paragraph with the value of 
+    " |g:workbook#insert_results_in_buffer| inverted.
+    let g:workbook#map_evalinvblock = '<c-s-cr>'   "{{{2
 endif
 
 if !exists('g:workbook#transcript')
@@ -188,8 +189,8 @@ endf
 " In workbooks the following maps can be used:
 " |g:workbook#map_evalblock| ... Eval the current block (usually the 
 "               current paragraph or visually selected code)
-" |g:workbook#map_evalinsertblock ... Eval the current block with 
-"               |g:workbook#insert_results_in_buffer| reverted
+" |g:workbook#map_evalinvblock ... Eval the current block with 
+"               |g:workbook#insert_results_in_buffer| inverted
 " |g:workbook#map_op|{motion} ... Operator: eval some code
 " |g:workbook#map_op| ... Visual mode: eval some code
 "
@@ -218,7 +219,7 @@ function! workbook#SetupBuffer(...) abort "{{{3
         " Reset a REPL's state.
         command -buffer Workbookreset call workbook#Reset()
         exec 'nmap <expr> <buffer>' g:workbook#map_evalblock 'workbook#EvalBlockExpr("")'
-        exec 'nmap <expr> <buffer>' g:workbook#map_evalinsertblock 'workbook#EvalBlockExpr(":let b:workbook_insert_results_in_buffer_once = 1\<cr>")'
+        exec 'nmap <expr> <buffer>' g:workbook#map_evalinvblock 'workbook#EvalBlockExpr(":let b:workbook_insert_results_in_buffer_once = !g:workbook#insert_results_in_buffer\<cr>")'
         exec 'nnoremap <buffer>' g:workbook#map_evalline ':call workbook#Print(line("."), line("."))<cr>j$'
         exec 'nnoremap <buffer>' g:workbook#map_op ':set opfunc=workbook#Op<cr>g@'
         exec 'xnoremap <buffer>' g:workbook#map_op 'y:<c-u>call workbook#Op(visualmode(), 1)<cr>'
@@ -320,7 +321,7 @@ function! workbook#UndoSetup() abort "{{{3
     delcommand Workbookrepl
     delcommand Workbookclear
     exec 'nunmap <buffer>' g:workbook#map_evalblock
-    exec 'nunmap <buffer>' g:workbook#map_evalinsertblock
+    exec 'nunmap <buffer>' g:workbook#map_evalinvblock
     exec 'nunmap <buffer>' g:workbook#map_evalline
     exec 'nunmap <buffer>' g:workbook#map_op
     exec 'xunmap <buffer>' g:workbook#map_op
@@ -351,7 +352,7 @@ function! workbook#Help() abort "{{{3
     echom ' '
     echom 'Maps:'
     echom 'Use' g:workbook#map_evalblock 'to evaluate the current paragraph.'
-    echom 'Use' g:workbook#map_evalinsertblock 'to evaluate the current paragraph with g:workbook#insert_results_in_buffer inversed.'
+    echom 'Use' g:workbook#map_evalinvblock 'to evaluate the current paragraph with g:workbook#insert_results_in_buffer inverted.'
     echom 'Use' g:workbook#map_evalline 'to evaluate the current line.'
     exec 'map' g:workbook#map_op
     exec 'map' g:workbook#map_leader
