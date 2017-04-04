@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-30
-" @Revision:    539
+" @Last Change: 2017-04-04
+" @Revision:    541
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -288,7 +288,7 @@ function! s:prototype.ConsumeOutput(type, msg, ...) abort dict "{{{3
                 endif
             endif
         endif
-        if self.DoTranscribe() && empty(self.next_process_output)
+        if self.DoTranscribe() != 0 && empty(self.next_process_output)
             call self.Transcribe('r', [part])
         endif
         if get(self, 'ignore_output', 0) == 0 && !empty(part)
@@ -315,7 +315,7 @@ function! s:prototype.ConsumeError(msg, ...) abort dict "{{{3
     if !empty(parts)
         let id = self.id
         Tlibtrace 'workbook', 'ConsumeError', id
-        if self.DoTranscribe()
+        if self.DoTranscribe() != 0
             call self.Transcribe('e', parts)
         else
             echohl ErrorMsg
@@ -352,7 +352,7 @@ function! s:prototype.Transcribe(type, lines, ...) abort dict "{{{3
     if empty(a:lines)
         return
     endif
-    let redraw = a:0 >= 1 ? a:1 : 0
+    let redraw = a:0 >= 1 ? a:1 : self.DoTranscribe() == 2
     let lines = copy(a:lines)
     let start_new_line = a:type =~# '^[ed]$'
     if a:type =~# '^[ic]$'

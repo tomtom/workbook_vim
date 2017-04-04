@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-31
-" @Revision:    872
+" @Last Change: 2017-04-04
+" @Revision:    900
 
 
 if v:version < 800
@@ -63,6 +63,22 @@ if !exists('g:workbook#insert_results_in_buffer')
     " b:workbook_insert_results_in_buffer if existant.
     let g:workbook#insert_results_in_buffer = 1   "{{{2
     " If -1, insert the result only if the transcipt isn't visible.
+endif
+
+if !exists('g:workbook#result_guifg')
+    let g:workbook#result_guifg = (&background ==# 'light' ? 'dark' : 'light') .'blue'    "{{{2
+endif
+
+if !exists('g:workbook#result_guibg')
+    let g:workbook#result_guibg = 'NONE'    "{{{2
+endif
+
+if !exists('g:workbook#result_ctermfg')
+    let g:workbook#result_ctermfg = (&background ==# 'light' ? 'dark' : 'light') .'blue'   "{{{2
+endif
+
+if !exists('g:workbook#result_ctermbg')
+    let g:workbook#result_ctermbg = 'NONE'   "{{{2
 endif
 
 if !exists('g:workbook#debug')
@@ -153,14 +169,11 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
         let s:repls[id] = repl
     endif
     let s:buffers[bufnr] = id
-    " if has_key(repl, 'result_syntax')
-    "     let rl = repl.GetResultLineRx(1)
-    "     let group = repl.result_syntax
-    "     echom 'syntax include @WorkbookResult syntax/'. repl.filetype .'.vim'
-    "     exec 'syntax include @WorkbookResult syntax/'. repl.filetype .'.vim'
-    "     echom 'syntax match WorkbookResultLine /'. escape(rl, '/') .'/ contains=@WorkbookResult containedin='. group
-    "     exec 'syntax match WorkbookResultLine /'. escape(rl, '/') .'/ contains=@WorkbookResult containedin='. group
-    " endif
+    " let rl = repl.GetResultLineRx(1)
+    " exec 'syntax include @WorkbookResult syntax/'. repl.filetype .'.vim'
+    " exec 'syntax match WorkbookResultLine /'. escape(rl, '/') .'/ contains=@WorkbookResult containedin=ALL'
+    " exec 'hi WorkbookResultLine ctermfg='. g:workbook#result_ctermfg 'ctermbg='. g:workbook#result_ctermbg
+    "             \ 'guifg='. g:workbook#result_guifg 'guibg='. g:workbook#result_guibg
     call workbook#SetupBuffer(repl)
     call workbook#InitQuicklist(2, repl)
     if has_key(repl, 'InitBufferFiletype')
@@ -386,7 +399,7 @@ function! workbook#Op(type, ...) abort "{{{3
             " silent exec "normal! gvy"
             let repl = workbook#GetRepl()
             let code = @@
-            if repl.DoTranscribe()
+            if repl.DoTranscribe() != 0
                 call repl.Transcribe('c', split(code, '\n'))
             endif
             call repl.Send(code, '')
@@ -499,7 +512,7 @@ function! workbook#Print(line1, line2, ...) abort "{{{3
         Tlibtrace 'workbook', rid
         call repl.SetPlaceholder(bufnr('%'), placeholder, pline)
         " async
-        if repl.DoTranscribe()
+        if repl.DoTranscribe() != 0
             call repl.Transcribe('c', lines)
         endif
     finally
@@ -604,9 +617,9 @@ endf
 
 function! workbook#InteractiveRepl() abort "{{{3
     let repl = workbook#GetRepl()
-    if !repl.DoTranscribe()
+    if !repl.DoTranscribe() == 0
         let transcribe = repl.DoTranscribe()
-        call repl.SetTranscribe(1)
+        call repl.SetTranscribe(2)
     endif
     try
         let ignore_output = get(repl, 'ignore_output', 0)
