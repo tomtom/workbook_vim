@@ -1,8 +1,8 @@
 " @Author:      Tom Link (micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-16
-" @Revision:    24
+" @Last Change: 2017-04-05
+" @Revision:    27
 " GetLatestVimScripts: 5527 0 :AutoInstall: workbook.vim
 
 if &cp || exists('g:loaded_workbook')
@@ -45,6 +45,12 @@ augroup Workbook
     endfor
     unlet! s:ft
 augroup END
+
+" Check the current buffer too in case the plugin gets loaded after 
+" startup.
+if index(g:workbook_autosetup_filetypes, &filetype) != -1
+    call workbook#SetupBuffer()
+endif
 
 
 let &cpo = s:save_cpo
