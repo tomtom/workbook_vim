@@ -2,7 +2,7 @@
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Last Change: 2017-04-04
-" @Revision:    900
+" @Revision:    905
 
 
 if v:version < 800
@@ -56,11 +56,16 @@ endif
 if !exists('g:workbook#insert_results_in_buffer')
     " If not zero, insert the results of an evaluation below the 
     " evaluated code.
-    " If 1, insert the result.
     "
     " This parameter will be overridden by the value of 
     " b:workbook_insert_results_in_buffer_once or 
     " b:workbook_insert_results_in_buffer if existant.
+    "                                                   *workbook-stopline*
+    " If there is a stop-line (=-) below the current block, nothing will 
+    " be inserted. E.g. in R, a stop-line looks like this: >
+    "
+    "   str(cars)
+    "   #=-
     let g:workbook#insert_results_in_buffer = 1   "{{{2
     " If -1, insert the result only if the transcipt isn't visible.
 endif
@@ -633,6 +638,7 @@ function! workbook#InteractiveRepl() abort "{{{3
                 break
             else
                 call repl.Transcribe('i', [code], 1)
+                let code = substitute(code, "\<c-m>", "\n", 'g')
                 call repl.Input(code, 1)
             endif
         endwh
