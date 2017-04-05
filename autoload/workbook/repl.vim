@@ -2,11 +2,12 @@
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Last Change: 2017-04-04
-" @Revision:    541
+" @Revision:    542
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
-    let g:workbook#repl#transript_new_cmd = &previewheight .'split'   "{{{2
+    let g:workbook#repl#transript_new_cmd = '4 split'   "{{{2
+    " let g:workbook#repl#transript_new_cmd = &previewheight .'split'   "{{{2
     " let g:workbook#repl#transript_new_cmd = (&columns > 150 && g:workbook#insert_results_in_buffer != 0 ? 'vert ' : &previewheight) .'split'   "{{{2
 endif
 
