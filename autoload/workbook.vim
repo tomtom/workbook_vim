@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-04
-" @Revision:    905
+" @Last Change: 2017-04-05
+" @Revision:    909
 
 
 if v:version < 800
@@ -237,8 +237,11 @@ function! workbook#SetupBuffer(...) abort "{{{3
         " Reset a REPL's state.
         command -buffer Workbookreset call workbook#Reset()
         exec 'nmap <expr> <buffer>' g:workbook#map_evalblock 'workbook#EvalBlockExpr("")'
+        exec 'imap <expr> <buffer>' g:workbook#map_evalblock '"\<Esc>". workbook#EvalBlockExpr("") ."i"'
         exec 'nmap <expr> <buffer>' g:workbook#map_evalinvblock 'workbook#EvalBlockExpr(":let b:workbook_insert_results_in_buffer_once = !g:workbook#insert_results_in_buffer\<cr>")'
+        exec 'imap <expr> <buffer>' g:workbook#map_evalinvblock '"\<Esc>". workbook#EvalBlockExpr(":let b:workbook_insert_results_in_buffer_once = !g:workbook#insert_results_in_buffer\<cr>") ."i"'
         exec 'nnoremap <buffer>' g:workbook#map_evalline ':call workbook#Print(line("."), line("."))<cr>j$'
+        exec 'inoremap <buffer>' g:workbook#map_evalline '<esc>:call workbook#Print(line("."), line("."))<cr>j$i'
         exec 'nnoremap <buffer>' g:workbook#map_op ':set opfunc=workbook#Op<cr>g@'
         exec 'xnoremap <buffer>' g:workbook#map_op 'y:<c-u>call workbook#Op(visualmode(), 1)<cr>'
         exec 'xmap <buffer>' g:workbook#map_evalblock g:workbook#map_op
@@ -306,7 +309,7 @@ function! s:GotoEndOfBlockExpr(...) abort "{{{3
     let repl = a:0 >= 1 ? a:1 : workbook#GetRepl()
     let default = a:0 >= 1 ? a:1 : 'ip}'
     let line = getline('.')
-    if line =~ '\S'
+    if line =~# '\S'
         " && synIDattr(synIDtrans(synID(line("."), col("."), 1)), "name") !=# 'Comment'
         let rhs = has_key(repl, 'GotoEndOfBlockExpr') ? repl.GotoEndOfBlockExpr(0) : 'ip}'
     else
@@ -339,8 +342,11 @@ function! workbook#UndoSetup() abort "{{{3
     delcommand Workbookrepl
     delcommand Workbookclear
     exec 'nunmap <buffer>' g:workbook#map_evalblock
+    exec 'iunmap <buffer>' g:workbook#map_evalblock
     exec 'nunmap <buffer>' g:workbook#map_evalinvblock
+    exec 'iunmap <buffer>' g:workbook#map_evalinvblock
     exec 'nunmap <buffer>' g:workbook#map_evalline
+    exec 'iunmap <buffer>' g:workbook#map_evalline
     exec 'nunmap <buffer>' g:workbook#map_op
     exec 'xunmap <buffer>' g:workbook#map_op
     exec 'nunmap <buffer>' g:workbook#map_leader .'<f1>'
