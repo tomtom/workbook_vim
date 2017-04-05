@@ -169,11 +169,11 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
         let s:repls[id] = repl
     endif
     let s:buffers[bufnr] = id
-    " let rl = repl.GetResultLineRx(1)
-    " exec 'syntax include @WorkbookResult syntax/'. repl.filetype .'.vim'
-    " exec 'syntax match WorkbookResultLine /'. escape(rl, '/') .'/ contains=@WorkbookResult containedin=ALL'
-    " exec 'hi WorkbookResultLine ctermfg='. g:workbook#result_ctermfg 'ctermbg='. g:workbook#result_ctermbg
-    "             \ 'guifg='. g:workbook#result_guifg 'guibg='. g:workbook#result_guibg
+    let rl = repl.GetResultLineRx(1)
+    exec 'syntax include @WorkbookResult syntax/'. repl.filetype .'.vim'
+    exec 'syntax match WorkbookResultLine /'. escape(rl, '/') .'/ contains=@WorkbookResult containedin=ALL'
+    exec 'hi WorkbookResultLine ctermfg='. g:workbook#result_ctermfg 'ctermbg='. g:workbook#result_ctermbg
+                \ 'guifg='. g:workbook#result_guifg 'guibg='. g:workbook#result_guibg
     call workbook#SetupBuffer(repl)
     call workbook#InitQuicklist(2, repl)
     if has_key(repl, 'InitBufferFiletype')
