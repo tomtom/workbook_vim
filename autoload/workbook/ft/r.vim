@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-30
-" @Revision:    559
+" @Last Change: 2017-04-05
+" @Revision:    565
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -33,7 +33,14 @@ endif
 
 
 if !exists('g:workbook#ft#r#init_code')
+    " Evaluate this code on startup.
     let g:workbook#ft#r#init_code = ''   "{{{2
+endif
+
+
+if !exists('g:workbook#ft#r#init_files')
+    " Source these files on startup.
+    let g:workbook#ft#r#init_files = []   "{{{2
 endif
 
 
@@ -204,7 +211,14 @@ function! s:prototype.InitFiletype() abort dict "{{{3
     if filereadable(g:workbook#ft#r#init_script)
         call self.Send(printf('source("%s")', substitute(g:workbook#ft#r#init_script, '\\', '/', 'g')))
     endif
-    call self.Send(g:workbook#ft#r#init_code)
+    if !empty(g:workbook#ft#r#init_code)
+        call self.Send(g:workbook#ft#r#init_code)
+    endif
+    for filename in g:workbook#ft#r#init_files
+        if filereadable(filename)
+            call self.Send(printf('source("%s")', substitute(filename, '\\', '/', 'g')))
+        endif
+    endfor
     " call workbook#ft#r#Cd()
     call self.Send('flush.console()')
     " call self.Input("\n\n", 0)
