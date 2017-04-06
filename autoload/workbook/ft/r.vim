@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-05
-" @Revision:    565
+" @Last Change: 2017-04-06
+" @Revision:    566
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -34,7 +34,7 @@ endif
 
 if !exists('g:workbook#ft#r#init_code')
     " Evaluate this code on startup.
-    let g:workbook#ft#r#init_code = ''   "{{{2
+    let g:workbook#ft#r#init_code = 'workbookCtags()'   "{{{2
 endif
 
 
