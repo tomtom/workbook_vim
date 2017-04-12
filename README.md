@@ -2,7 +2,7 @@ The long-term goal of this plugin is to provide notebook-like interaction with
 interpreted languages similar to Mathematica or Jupyter (within the limits 
 of a text editor like vim).
 
-Features~
+# Features
 - Run an interpreter as an inferior process.
 - Send code to this process (asynchronously without blocking vim).
 - Insert (or dynamically update) the results into the source code (as 
@@ -11,7 +11,7 @@ Features~
 - Transcribe the interaction with the interpreter.
 - Provide code completion (see 'omnifunc') for some filetypes.
 
-How to use this plugin~
+# How to use this plugin
 - Open a file with a supported filetype (see below or 
   |workbook#GetSupportedFiletypes()|).
 - Type |:Workbook| or add the filetype to |g:workbook_autosetup_filetypes| to 
@@ -20,7 +20,7 @@ How to use this plugin~
 - Press <localleader>w<F1> for help on other commands and maps -- see also 
   |workbook#SetupBuffer()|.
 
-The following filetypes are supported well~
+# The following filetypes are supported well
 - R (supports code completion)
 - Rmd (same as R)
 
@@ -41,7 +41,8 @@ dependencies and works at least on Linux and Windows with no problems.
 
 
 -----------------------------------------------------------------------
-Install~
+
+# Install
 
 Either use the zip archive:
     - Download the zip archive
@@ -56,7 +57,7 @@ NOTE: On Windows, ~/.vim might be ~/vimfiles. Please see 'runtimepath' for
 details.
 
 
-Requirements~
+# Requirements
 
 This script requires tlib (vimscript #1863) to be installed -- see 
 https://github.com/tomtom/tlib_vim.
@@ -65,7 +66,8 @@ https://github.com/tomtom/tlib_vim.
 
 
 Dependencies:
-  tlib (>= 1.22) :: http://github.com/tomtom/tlib_vim
+tlib (>= 1.22)
+:    http://github.com/tomtom/tlib_vim
 
 License: GPLv3 or later
 Install: See http://github.com/tomtom/vimtlib/blob/master/INSTALL.TXT
