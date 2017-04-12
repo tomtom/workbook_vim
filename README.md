@@ -3,6 +3,7 @@ interpreted languages similar to Mathematica or Jupyter (within the limits
 of a text editor like vim).
 
 # Features
+
 - Run an interpreter as an inferior process.
 - Send code to this process (asynchronously without blocking vim).
 - Insert (or dynamically update) the results into the source code (as 
@@ -12,6 +13,7 @@ of a text editor like vim).
 - Provide code completion (see 'omnifunc') for some filetypes.
 
 # How to use this plugin
+
 - Open a file with a supported filetype (see below or 
   `workbook#GetSupportedFiletypes()`).
 - Type `:Workbook` or add the filetype to `g:workbook_autosetup_filetypes` to 
@@ -21,10 +23,12 @@ of a text editor like vim).
   `workbook#SetupBuffer()`.
 
 # The following filetypes are supported well
+
 - R (supports code completion)
 - Rmd (same as R)
 
 Experimental/basic support is provided for:
+
 - fsharp
 - javascript
 - python
@@ -37,6 +41,8 @@ Currenty, the main use case is to interact with R. Other than other
 well-known R-related vim plugins, the workbook plugin has no non-vim 
 dependencies and works at least on Linux and Windows with no problems.
 
+Demo:
+
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/hY_kNRKWIH0/0.jpg)](https://www.youtube.com/watch?v=hY_kNRKWIH0)
 
 
@@ -45,13 +51,15 @@ dependencies and works at least on Linux and Windows with no problems.
 # Install
 
 Either use the zip archive:
-    - Download the zip archive
-    - Extract it to ~/.vim/pack/tml/start/workbook
+
+- Download the zip archive
+- Extract it to ~/.vim/pack/tml/start/workbook
 
 or install from github:
-    - Start a terminal
-    - Change the working directory to ~/.vim/pack/tml/start/
-    - Type: git clone https://github.com/tomtom/workbook_vim
+
+- Start a terminal
+- Change the working directory to ~/.vim/pack/tml/start/
+- Type: git clone https://github.com/tomtom/workbook_vim
 
 NOTE: On Windows, ~/.vim might be ~/vimfiles. Please see 'runtimepath' for 
 details.
