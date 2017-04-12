@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-05
-" @Revision:    909
+" @Last Change: 2017-04-12
+" @Revision:    910
 
 
 if v:version < 800
@@ -244,7 +244,7 @@ function! workbook#SetupBuffer(...) abort "{{{3
         exec 'inoremap <buffer>' g:workbook#map_evalline '<esc>:call workbook#Print(line("."), line("."))<cr>j$i'
         exec 'nnoremap <buffer>' g:workbook#map_op ':set opfunc=workbook#Op<cr>g@'
         exec 'xnoremap <buffer>' g:workbook#map_op 'y:<c-u>call workbook#Op(visualmode(), 1)<cr>'
-        exec 'xmap <buffer>' g:workbook#map_evalblock g:workbook#map_op
+        exec 'vmap <buffer>' g:workbook#map_evalblock g:workbook#map_op
         exec 'nnoremap <buffer>' g:workbook#map_leader .'r :call workbook#InteractiveRepl()<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'z :call workbook#ResetRepl()<cr>'
         exec 'nnoremap <buffer>' g:workbook#map_leader .'c :call workbook#StripResults(line("."), line("."))<cr>'
@@ -343,6 +343,7 @@ function! workbook#UndoSetup() abort "{{{3
     delcommand Workbookclear
     exec 'nunmap <buffer>' g:workbook#map_evalblock
     exec 'iunmap <buffer>' g:workbook#map_evalblock
+    exec 'vunmap <buffer>' g:workbook#map_evalblock
     exec 'nunmap <buffer>' g:workbook#map_evalinvblock
     exec 'iunmap <buffer>' g:workbook#map_evalinvblock
     exec 'nunmap <buffer>' g:workbook#map_evalline
