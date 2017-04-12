@@ -66,8 +66,9 @@ https://github.com/tomtom/tlib_vim.
 
 
 Dependencies:
-tlib (>= 1.22)
-:    http://github.com/tomtom/tlib_vim
+<dl>
+<dt>tlib (>= 1.22)</dt><dd>http://github.com/tomtom/tlib_vim</dd>
+</dl>
 
 License: GPLv3 or later
 Install: See http://github.com/tomtom/vimtlib/blob/master/INSTALL.TXT
