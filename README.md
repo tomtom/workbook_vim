@@ -7,18 +7,18 @@ of a text editor like vim).
 - Send code to this process (asynchronously without blocking vim).
 - Insert (or dynamically update) the results into the source code (as 
   commented out block below the respective source code). See also 
-  |g:workbook#insert_results_in_buffer|.
+  `g:workbook#insert_results_in_buffer`.
 - Transcribe the interaction with the interpreter.
 - Provide code completion (see 'omnifunc') for some filetypes.
 
 # How to use this plugin
 - Open a file with a supported filetype (see below or 
-  |workbook#GetSupportedFiletypes()|).
-- Type |:Workbook| or add the filetype to |g:workbook_autosetup_filetypes| to 
+  `workbook#GetSupportedFiletypes()`).
+- Type `:Workbook` or add the filetype to `g:workbook_autosetup_filetypes` to 
   automatically enable the workbook mode for the specified filetypes.
-- Press <c-cr> to evaluate the current paragraph.
-- Press <localleader>w<F1> for help on other commands and maps -- see also 
-  |workbook#SetupBuffer()|.
+- Press \<c-cr> to evaluate the current paragraph.
+- Press \<localleader>w\<F1> for help on other commands and maps -- see also 
+  `workbook#SetupBuffer()`.
 
 # The following filetypes are supported well
 - R (supports code completion)
