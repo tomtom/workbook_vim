@@ -43,7 +43,7 @@ dependencies and works at least on Linux and Windows with no problems.
 
 # Demo
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/hY_kNRKWIH0/0.jpg)](https://www.youtube.com/watch?v=hY_kNRKWIH0)
+\<iframe width="560" height="315" src="https://www.youtube.com/embed/hY_kNRKWIH0" frameborder="0" allowfullscreen>\</iframe>
 
 
 -----------------------------------------------------------------------
