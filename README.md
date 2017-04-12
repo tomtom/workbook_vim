@@ -41,7 +41,7 @@ Currenty, the main use case is to interact with R. Other than other
 well-known R-related vim plugins, the workbook plugin has no non-vim 
 dependencies and works at least on Linux and Windows with no problems.
 
-Demo:
+# Demo
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/hY_kNRKWIH0/0.jpg)](https://www.youtube.com/watch?v=hY_kNRKWIH0)
 
