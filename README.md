@@ -43,7 +43,7 @@ dependencies and works at least on Linux and Windows with no problems.
 
 # Demo
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/hY_kNRKWIH0/0.jpg)](https://www.youtube.com/watch?v=hY_kNRKWIH0)
+[![demo video](https://img.youtube.com/vi/hY_kNRKWIH0/0.jpg)](https://www.youtube.com/watch?v=hY_kNRKWIH0)
 
 
 -----------------------------------------------------------------------
@@ -67,7 +67,7 @@ details.
 
 # Requirements
 
-This script requires tlib (vimscript #1863) to be installed -- see 
+This script requires tlib ([vimscript #1863](http://www.vim.org/scripts/script.php?script_id=1863)) to be installed -- see 
 https://github.com/tomtom/tlib_vim.
 
 

@@ -6,6 +6,7 @@ interpreted languages similar to Mathematica or Jupyter (within the limits
 of a text editor like vim).
 
 Features~
+
 - Run an interpreter as an inferior process.
 - Send code to this process (asynchronously without blocking vim).
 - Insert (or dynamically update) the results into the source code (as 
@@ -15,6 +16,7 @@ Features~
 - Provide code completion (see 'omnifunc') for some filetypes.
 
 How to use this plugin~
+
 - Open a file with a supported filetype (see below or 
   |workbook#GetSupportedFiletypes()|).
 - Type |:Workbook| or add the filetype to |g:workbook_autosetup_filetypes| to 
@@ -24,10 +26,12 @@ How to use this plugin~
   |workbook#SetupBuffer()|.
 
 The following filetypes are supported well~
+
 - R (supports code completion)
 - Rmd (same as R)
 
 Experimental/basic support is provided for:
+
 - fsharp
 - javascript
 - python
@@ -40,18 +44,24 @@ Currenty, the main use case is to interact with R. Other than other
 well-known R-related vim plugins, the workbook plugin has no non-vim 
 dependencies and works at least on Linux and Windows with no problems.
 
+Demo~
+
+[![demo video](https://img.youtube.com/vi/hY_kNRKWIH0/0.jpg)](https://www.youtube.com/watch?v=hY_kNRKWIH0)
+
 
 -----------------------------------------------------------------------
 Install~
 
 Either use the zip archive:
-    - Download the zip archive
-    - Extract it to ~/.vim/pack/tml/start/workbook
+
+- Download the zip archive
+- Extract it to ~/.vim/pack/tml/start/workbook
 
 or install from github:
-    - Start a terminal
-    - Change the working directory to ~/.vim/pack/tml/start/
-    - Type: git clone https://github.com/tomtom/workbook_vim
+
+- Start a terminal
+- Change the working directory to ~/.vim/pack/tml/start/
+- Type: git clone https://github.com/tomtom/workbook_vim
 
 NOTE: On Windows, ~/.vim might be ~/vimfiles. Please see 'runtimepath' for 
 details.
@@ -85,6 +95,8 @@ Contents~
         workbook#ResetRepl ........................ |workbook#ResetRepl()|
         workbook#GetSupportedFiletypes ............ |workbook#GetSupportedFiletypes()|
         g:workbook#ft#r#args ...................... |g:workbook#ft#r#args|
+        g:workbook#ft#r#init_code ................. |g:workbook#ft#r#init_code|
+        g:workbook#ft#r#init_files ................ |g:workbook#ft#r#init_files|
         g:workbook#ft#r#save ...................... |g:workbook#ft#r#save|
         g:workbook#ft#r#restore ................... |g:workbook#ft#r#restore|
         g:workbook#ft#r#highlight_debug ........... |g:workbook#ft#r#highlight_debug|
@@ -97,10 +109,6 @@ Contents~
         workbook#ft#r#Undebug ..................... |workbook#ft#r#Undebug()|
         workbook#ft#scala#SetupBuffer ............. |workbook#ft#scala#SetupBuffer()|
         workbook#ft#vim#New ....................... |workbook#ft#vim#New()|
-        prototype.Input
-        prototype.Send
-        prototype.Eval
-        prototype.IsKnownPlaceholder
 
 
 ------------------------------------------------------------------------
@@ -155,11 +163,17 @@ g:workbook#transcript          (default: 1)
 g:workbook#insert_results_in_buffer (default: 1)
     If not zero, insert the results of an evaluation below the 
     evaluated code.
-    If 1, insert the result.
 
     This parameter will be overridden by the value of 
     b:workbook_insert_results_in_buffer_once or 
     b:workbook_insert_results_in_buffer if existant.
+                                                      *workbook-stopline*
+    If there is a stop-line (=-) below the current block, nothing will 
+    be inserted. E.g. in R, a stop-line looks like this: >
+
+      str(cars)
+      #=-
+<
 
                                                     *workbook#SetupBuffer()*
 workbook#SetupBuffer(...)
@@ -218,6 +232,14 @@ workbook#GetSupportedFiletypes()
                                                     *g:workbook#ft#r#args*
 g:workbook#ft#r#args           (default: '--silent '. (g:workbook#ft#r#cmd =~? '\<rterm\%(\.exe\)\>' ? '--ess' : '--no-readline --interactive'))
     let g:workbook#ft#r#args = '--slave --no-save'   "
+
+                                                    *g:workbook#ft#r#init_code*
+g:workbook#ft#r#init_code      (default: 'workbookCtags()')
+    Evaluate this code on startup.
+
+                                                    *g:workbook#ft#r#init_files*
+g:workbook#ft#r#init_files     (default: [])
+    Source these files on startup.
 
                                                     *g:workbook#ft#r#save*
 g:workbook#ft#r#save           (default: 1)
