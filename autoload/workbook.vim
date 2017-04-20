@@ -2,7 +2,7 @@
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Last Change: 2017-04-12
-" @Revision:    910
+" @Revision:    911
 
 
 if v:version < 800
@@ -185,6 +185,17 @@ function! workbook#InitBuffer(args, ...) abort "{{{3
         call repl.InitBufferFiletype()
     endif
     return repl
+endf
+
+
+function! workbook#GetReplBufnrs(rid) abort "{{{3
+    let bufnrs = []
+    for [bufnr, rid] in items(s:buffers)
+        if rid ==# a:rid
+            call add(bufnrs, bufnr)
+        endif
+    endfor
+    return bufnrs
 endf
 
 
