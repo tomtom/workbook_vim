@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-06
-" @Revision:    566
+" @Last Change: 2017-04-12
+" @Revision:    574
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -143,7 +143,7 @@ function! workbook#ft#r#SetupBuffer() abort "{{{3
     if &l:keywordprg =~# '^\%(man\>\|:help$\|$\)'
         nnoremap <buffer> K :call workbook#Send('?"<c-r><c-w>"')<cr>
     endif
-    if &buftype != 'nofile'
+    if &buftype !=# 'nofile'
         let filename = substitute(expand('%:p'), '\\', '/', 'g')
         exec 'nnoremap <buffer>' g:workbook#map_leader .'s :call workbook#Send("source('. string(filename) .')")<cr>'
     endif
@@ -173,7 +173,10 @@ function! workbook#ft#r#UndoSetup() abort "{{{3
 endf
 
 
-let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", p, c, p)}
+" let s:WrapCode = {p, c -> printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", p, c, p)}
+function! s:WrapCode(p, c) abort "{{{3
+    return printf("cat(\"\\nWorkbookBEGIN:%s\\n\")\n%s\ncat(\"\\nWorkbookEND:%s\\n\"); flush.console()\n", a:p, a:c, a:p)
+endf
 
 
 let s:prototype = {'debugged': {}
@@ -337,12 +340,12 @@ function! s:prototype.Debug(fn) abort dict "{{{3
         let r = printf('{debug(%s); "ok"}', a:fn)
         let rv = self.Eval(r)
         " TLogVAR rv
-        if rv == "ok"
+        if rv ==# 'ok'
             let self.debugged[a:fn] = 1
             call self.HighlightDebug()
         else
             echohl Error
-            echom "Workbook/r: Cannot debug ". a:fn
+            echom 'Workbook/r: Cannot debug' a:fn
             echohl NONE
         endif
     else
@@ -359,9 +362,9 @@ function! s:prototype.Undebug(fn) abort dict "{{{3
     if !empty(fn)
         if has_key(self.debugged, fn)
             let self.debugged[fn] = 0
-            echom "Workbook/r: Undebug:" a:fn
+            echom 'Workbook/r: Undebug:' a:fn
         else
-            echom "Workbook/r: Not a debugged function?" fn
+            echom 'Workbook/r: Not a debugged function?' fn
         endif
         let r = printf('undebug(%s)', fn)
         call self.Send(r)
@@ -373,19 +376,17 @@ endf
 function! s:prototype.HighlightDebug() abort dict "{{{3
     let bufnr = bufnr('%')
     try
-        for [bnr, rid] in items(s:buffers)
-            if rid == self.id
-                exec 'hide buffer' bnr
-                if b:workbook_r_hl_init
-                    syntax clear WorkbookRDebug
-                else
-                    exec 'hi def link WorkbookRDebug' g:workbook#ft#r#highlight_debug
-                    let b:workbook_r_hl_init = 1
-                endif
-                if !empty(self.debugged)
-                    let debugged = map(copy(self.debugged), 'escape(v:val, ''\'')')
-                    exec 'syntax match WorkbookRDebug /\V\<\('. join(debugged, '\|') .'\)\>/'
-                endif
+        for bnr in workbook#GetReplBufnrs(self.id)
+            exec 'hide buffer' bnr
+            if b:workbook_r_hl_init
+                syntax clear WorkbookRDebug
+            else
+                exec 'hi def link WorkbookRDebug' g:workbook#ft#r#highlight_debug
+                let b:workbook_r_hl_init = 1
+            endif
+            if !empty(self.debugged)
+                let debugged = map(copy(self.debugged), 'escape(v:val, ''\'')')
+                exec 'syntax match WorkbookRDebug /\V\<\('. join(debugged, '\|') .'\)\>/'
             endif
         endfor
     finally
@@ -411,14 +412,14 @@ endf
 
 
 " Toggle the debug status of a function.
-function! workbook#ft#r#Debug(fn) "{{{3
+function! workbook#ft#r#Debug(fn) abort "{{{3
     let repl = workbook#GetRepl()
     call repl.Debug(a:fn)
 endf
 
 
 " Undebug a debugged function.
-function! workbook#ft#r#Undebug(fn) "{{{3
+function! workbook#ft#r#Undebug(fn) abort "{{{3
     let repl = workbook#GetRepl()
     call repl.Undebug(a:fn)
 endf
@@ -445,7 +446,7 @@ endf
 
 function! workbook#ft#r#Format(type, ...) abort "{{{3
     let sel_save = &selection
-    let &selection = "inclusive"
+    let &selection = 'inclusive'
     let reg_save = @@
     try
         if a:0  " Invoked from Visual mode, use gv command.
@@ -468,7 +469,7 @@ function! workbook#ft#r#FormatR(lnum, count) abort "{{{3
     let repl = workbook#GetRepl()
     let lend = a:lnum + a:count - 1
     let lines = getline(a:lnum, lend)
-    let lines = map(lines, {i, v -> '"'. escape(v, '"\') .'"'})
+    let lines = map(lines, '''"''. escape(v:val, ''"\'') .''"''')
     let code = join(lines, ', ')
     let options = empty(g:workbook#ft#r#formatR_options) ? '' : (', '. g:workbook#ft#r#formatR_options)
     let cmd = printf('suppressWarnings(formatR::tidy_source(text = c(%s)%s))', code, options)
