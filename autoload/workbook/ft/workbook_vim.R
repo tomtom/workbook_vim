@@ -18,7 +18,7 @@ invisible({options(width = 10000, pager = workbookPager)})
 
 if (!exists("workbookComplete")) {
     workbookComplete <- function (base) {
-        cs <- apropos(paste0("^", base))
+        cs <- apropos(paste0("^", base), ignore.case = FALSE)
         ls <- paste(cs, collapse = "\t")
         cat(ls)
         cat("\n")
@@ -28,7 +28,7 @@ if (!exists("workbookComplete")) {
 
 if (!exists("workbookHelp")) {
     workbookHelp <- function(name.string, ...) {
-        help((name.string), try.all.packages = TRUE, ...)
+        help(name.string, try.all.packages = TRUE, ...)
     }
 }
 
@@ -36,7 +36,7 @@ if (!exists("workbookHelp")) {
 if (!exists("workbookKeyword")) {
     workbookKeyword <- function(name, name.string, ...) {
         if (name.string == '') {
-            workbookHelp(name, ...)
+            workbookHelp(as.character(substitute(name)), ...)
         } else if (mode(name) == 'function') {
             workbookHelp(name.string, ...)
         } else {
