@@ -43,7 +43,7 @@ dependencies and works at least on Linux and Windows with no problems.
 
 # Demo
 
-[![demo video](https://img.youtube.com/vi/hY_kNRKWIH0/0.jpg)](https://www.youtube.com/watch?v=hY_kNRKWIH0)
+![demo video](https://raw.githubusercontent.com/tomtom/workbook_vim/master/etc/workbook_vim.gif)]
 
 
 -----------------------------------------------------------------------
@@ -79,6 +79,5 @@ Dependencies:
 </dl>
 
 License: GPLv3 or later
-Install: See http://github.com/tomtom/vimtlib/blob/master/INSTALL.TXT
-See http://github.com/tomtom for related plugins.
+
 
