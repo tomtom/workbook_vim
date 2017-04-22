@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-04
-" @Revision:    542
+" @Last Change: 2017-04-21
+" @Revision:    544
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -412,6 +412,16 @@ function! s:prototype.IsTranscriptVisible(...) abort dict "{{{3
 endf
 
 
+function! s:prototype.FlushOutputBuffer() abort dict "{{{3
+    if !empty(self.output_buffer)
+        call append('$', self.output_buffer)
+        let self.output_buffer = []
+        $
+        " redraw
+    endif
+endf
+
+
 function! s:prototype.TranscribeNow(timer) abort dict "{{{3
     Tlibtrace 'workbook', 'TranscribeNow', self.id, a:timer
     if has_key(self, 'redraw_timer') && self.redraw_timer == a:timer
@@ -458,12 +468,7 @@ function! s:prototype.TranscribeNow(timer) abort dict "{{{3
         else
             exec g:workbook#repl#transript_drop_cmd fnameescape(tid)
         endif
-        if !empty(self.output_buffer)
-            call append('$', self.output_buffer)
-            let self.output_buffer = []
-            $
-            " redraw
-        endif
+        call self.FlushOutputBuffer()
         " g:workbook#repl#display_transcript ==# 'always' && 
         if !this_is_a_log_buffer && bufwinnr(tid) == -1
             exec g:workbook#repl#transript_new_cmd fnameescape(tid)
