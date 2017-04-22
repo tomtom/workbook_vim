@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-12
-" @Revision:    911
+" @Last Change: 2017-04-21
+" @Revision:    915
 
 
 if v:version < 800
@@ -573,7 +573,13 @@ function! workbook#StripResults(line1, line2, ...) abort "{{{3
         endif
     endfor
     Tlibtrace 'workbook', may_insert, line1, line2
-    return [may_insert] + sort([line1, line2], {i1, i2 -> i1 == i2 ? 0 : i1 > i2 ? 1 : -1})
+    " return [may_insert] + sort([line1, line2], {i1, i2 -> i1 == i2 ? 0 : i1 > i2 ? 1 : -1})
+    return [may_insert] + sort([line1, line2], function('s:SortLines'))
+endf
+
+
+function! s:SortLines(i1, i2) abort "{{{3
+    return a:i1 == a:i2 ? 0 : a:i1 > a:i2 ? 1 : -1
 endf
 
 
@@ -737,7 +743,7 @@ endf
 " Return a list of supported filetypes.
 function! workbook#GetSupportedFiletypes() abort "{{{3
     let files = globpath(&rtp, 'autoload/workbook/ft/*.vim', 0, 1)
-    let files = map(files, {i,f -> matchstr(f, '[\/]\zs[^\/.]\{-}\ze\.vim$')})
+    let files = map(files, 'matchstr(v:val, ''[\/]\zs[^\/.]\{-}\ze\.vim$''')
     return files
 endf
 
@@ -745,6 +751,7 @@ endf
 function! workbook#Overview() abort "{{{3
     let repls = items(s:repls)
     let rinfos = map(copy(repls), {i, v -> v[0] .': '. (v[1].IsReady() ? 'ready' : 'dead')})
+    " let rinfos = map(copy(repls), 'v:val[0] .'': ''. (v:val[1].IsReady() ? ''ready'' : ''dead'')')
     let w = tlib#World#New()
     let w.type = 'si'
     let w.pick_last_item = 0
