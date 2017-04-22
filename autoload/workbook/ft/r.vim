@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-12
-" @Revision:    574
+" @Last Change: 2017-04-21
+" @Revision:    576
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -261,7 +261,7 @@ endf
 function! s:prototype.ProcessLine(line) abort dict "{{{3
     Tlibtrace 'workbook', 'ProcessLine', a:line
     "" Doesn't work because it will be called recursively
-    if a:line =~# '^Browse\[\d\+\]>'
+    if a:line =~# '^\%(Browse\[\d\+\]>\|Enter a frame number, or 0 to exit\>\)'
         echohl WarningMsg
         echom 'Workbook/r:' a:line
         echohl NONE
