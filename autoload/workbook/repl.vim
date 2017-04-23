@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-21
-" @Revision:    544
+" @Last Change: 2017-04-22
+" @Revision:    547
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
@@ -373,18 +373,18 @@ function! s:prototype.Transcribe(type, lines, ...) abort dict "{{{3
     if empty(lines)
         return
     endif
-    if !empty(self.output_buffer) && (!start_new_line || empty(self.output_buffer[-1]))
-        let [first; rest] = lines
-        Tlibtrace 'workbook', first, rest
-        let self.output_buffer[-1] .= first
-        if !empty(rest)
-            call extend(self.output_buffer, rest)
-        else
-            call add(self.output_buffer, '')
-        endif
-    else
+    " if !empty(self.output_buffer) && (!start_new_line || empty(self.output_buffer[-1]))
+    "     let [first; rest] = lines
+    "     Tlibtrace 'workbook', first, rest
+    "     let self.output_buffer[-1] .= first
+    "     if !empty(rest)
+    "         call extend(self.output_buffer, rest)
+    "     else
+    "         call add(self.output_buffer, '')
+    "     endif
+    " else
         call extend(self.output_buffer, lines)
-    endif
+    " endif
     " call extend(self.output_buffer, lines)
     if has_key(self, 'redraw_timer')
         call timer_stop(self.redraw_timer)
