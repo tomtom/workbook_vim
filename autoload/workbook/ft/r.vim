@@ -344,9 +344,7 @@ function! s:prototype.Debug(fn) abort dict "{{{3
             let self.debugged[a:fn] = 1
             call self.HighlightDebug()
         else
-            echohl Error
-            echom 'Workbook/r: Cannot debug' a:fn
-            echohl NONE
+            call self.Echohl('Workbook/r: Cannot debug '. a:fn, 'ErrorMsg')
         endif
     else
         call workbook#ft#r#Undebug(a:fn)

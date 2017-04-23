@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-16
-" @Revision:    37
+" @Last Change: 2017-04-22
+" @Revision:    38
 
 
 
@@ -34,9 +34,7 @@ endf
 
 
 function! s:prototype.ExitCb(job, status) abort dict "{{{3
-    echohl WarningMsg
-    echom 'Workbook: REPL' self.id 'has exited with status' a:status
-    echohl NONE
+    call self.Echohl('Workbook REPL '. self.id .' has exited with status '. a:status)
     let self.teardown = 1
     call workbook#Stop({}, self)
 endf
@@ -80,9 +78,7 @@ function! s:prototype.IsReady(...) abort dict "{{{3
     let warn = a:0 >= 1 ? a:1 : !has_key(self, 'teardown')
     let rv = job_status(self.job) == 'run'
     if !rv && warn
-        echohl WarningMsg
-        echom 'Workbook.Send: REPL' self.id 'is not ready'
-        echohl NONE
+        call self.Echohl('Workbook.Send: REPL '. self.id .' is not ready')
     endif
     return rv
 endf

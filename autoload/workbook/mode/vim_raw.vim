@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-03-17
-" @Revision:    82
+" @Last Change: 2017-04-22
+" @Revision:    85
 
 
 
@@ -36,18 +36,14 @@ endf
 
 
 function! s:prototype.CloseCb(job, type) abort dict "{{{3
-    echohl WarningMsg
-    echom 'Workbook: REPL' self.id a:type
-    echohl NONE
+    call self.Echohl('Workbook: REPL '. self.id .' '. a:type)
     " let self.teardown = 1
     " call workbook#Stop({}, self)
 endf
 
 
 function! s:prototype.ExitCb(job, status, type) abort dict "{{{3
-    echohl WarningMsg
-    echom 'Workbook: REPL' self.id a:type 'with status' a:status
-    echohl NONE
+    call self.Echohl('Workbook: REPL '. self.id .' '. a:type .' with status '. a:status)
     let self.teardown = 1
     call workbook#Stop({}, self)
 endf
@@ -94,9 +90,7 @@ function! s:prototype.IsReady(...) abort dict "{{{3
     let rv = job_status(self.job) == 'run'
     Tlibtrace 'workbook', 'IsReady', warn, rv
     if !rv && warn
-        echohl WarningMsg
-        echom 'Workbook.Send: REPL' self.id 'is not ready'
-        echohl NONE
+        call self.Echohl('Workbook: REPL '. self.id .' is not ready')
     endif
     return rv
 endf

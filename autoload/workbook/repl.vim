@@ -575,3 +575,13 @@ function! s:prototype.ProcessOutput(...) abort dict "{{{3
 endf
 
 
+function! s:prototype.Echohl(text, ...) abort dict "{{{3
+    let hl = a:0 >= 1 ? a:1 : 'WarningMsg'
+    exec 'echohl' hl
+    try
+        echom a:text
+    finally
+        echohl NONE
+    endtry
+endf
+
