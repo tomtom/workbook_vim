@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-21
-" @Revision:    576
+" @Last Change: 2017-04-22
+" @Revision:    593
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 122
     runtime plugin/tlib.vim
@@ -261,16 +261,32 @@ endf
 function! s:prototype.ProcessLine(line) abort dict "{{{3
     Tlibtrace 'workbook', 'ProcessLine', a:line
     "" Doesn't work because it will be called recursively
-    if a:line =~# '^\%(Browse\[\d\+\]>\|Enter a frame number, or 0 to exit\>\)'
-        echohl WarningMsg
-        echom 'Workbook/r:' a:line
-        echohl NONE
-    "     " call add(self.next_cmd, 'Worbookrepl')
-    "     if !has_key(self, 'browser_mode')
-    "         call timer_start(500, function('workbook#ft#r#BrowserHandler'))
-    "     endif
+    if !empty(a:line)
+        " if has_key(self, 'expect_frames_list')
+        "     if a:line =~# '^\s*\d\+:'
+        "         call add(self.expect_frames_list, a:line)
+        "     else
+        "         " for line in self.expect_frames_list
+        "         "     call self.Echohl(line)
+        "         " endfor
+        "         echo join(self.expect_frames_list, "\n")
+        "         unlet self.expect_frames_list
+        "     endif
+        " else
+        if a:line =~# '^Browse\[\d\+\]>'
+            call self.Echohl('Workbook/r: '. a:line)
+        elseif a:line =~# '^Enter a frame number, or 0 to exit\>'
+            call self.Echohl('Workbook/r: '. a:line)
+            " let self.expect_frames_list = [a:line]
+            "     " call add(self.next_cmd, 'Worbookrepl')
+            "     if !has_key(self, 'browser_mode')
+            "         call timer_start(500, function('workbook#ft#r#BrowserHandler'))
+            "     endif
+        endif
+        return substitute(a:line, '^\%([>+] \)\+', '', 'g')
+    else
+        return a:line
     endif
-    return substitute(a:line, '^\%([>+] \)\+', '', 'g')
 endf
 
 
