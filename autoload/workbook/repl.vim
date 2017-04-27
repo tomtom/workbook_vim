@@ -1,12 +1,12 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-22
-" @Revision:    547
+" @Last Change: 2017-04-24
+" @Revision:    549
 
 
 if !exists('g:workbook#repl#transript_new_cmd')
-    let g:workbook#repl#transript_new_cmd = '4 split'   "{{{2
+    let g:workbook#repl#transript_new_cmd = (g:workbook#insert_results_in_buffer ? '4' : 'vert') .' split'   "{{{2
     " let g:workbook#repl#transript_new_cmd = &previewheight .'split'   "{{{2
     " let g:workbook#repl#transript_new_cmd = (&columns > 150 && g:workbook#insert_results_in_buffer != 0 ? 'vert ' : &previewheight) .'split'   "{{{2
 endif
