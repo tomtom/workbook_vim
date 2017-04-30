@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-21
-" @Revision:    915
+" @Last Change: 2017-04-28
+" @Revision:    917
 
 
 if v:version < 800
@@ -235,6 +235,8 @@ function! workbook#SetupBuffer(...) abort "{{{3
     if !exists('b:workbook_setup_done')
         let b:workbook_setup_done = 1
         autocmd Workbook Bufwipeout <buffer> call workbook#RemoveBuffer(expand('<abuf>'))
+        " Exit a REPL
+        command -buffer -nargs=1 Workbookquit call workbook#RemoveBuffer(bufnr('%'))
         " Send code to the REPL.
         command -buffer -nargs=1 Workbooksend call workbook#Send(<q-args>)
         " Eval some code and display the result.
@@ -246,7 +248,7 @@ function! workbook#SetupBuffer(...) abort "{{{3
         " Display help on available maps etc.
         command -buffer Workbookhelp call workbook#Help()
         " Reset a REPL's state.
-        command -buffer Workbookreset call workbook#Reset()
+        command -buffer Workbookreset call workbook#ResetRepl()
         exec 'nmap <expr> <buffer>' g:workbook#map_evalblock 'workbook#EvalBlockExpr("")'
         exec 'imap <expr> <buffer>' g:workbook#map_evalblock '"\<Esc>". workbook#EvalBlockExpr("") ."i"'
         exec 'nmap <expr> <buffer>' g:workbook#map_evalinvblock 'workbook#EvalBlockExpr(":let b:workbook_insert_results_in_buffer_once = !g:workbook#insert_results_in_buffer\<cr>")'
