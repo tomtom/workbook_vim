@@ -1,8 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @Website:     https://github.com/tomtom
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Last Change: 2017-04-28
-" @Revision:    917
+" @Last Change: 2017-05-12
+" @Revision:    918
 
 
 if v:version < 800
@@ -66,7 +66,7 @@ if !exists('g:workbook#insert_results_in_buffer')
     "
     "   str(cars)
     "   #=-
-    let g:workbook#insert_results_in_buffer = 1   "{{{2
+    let g:workbook#insert_results_in_buffer = 0   "{{{2
     " If -1, insert the result only if the transcipt isn't visible.
 endif
 
